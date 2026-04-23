@@ -7,7 +7,7 @@ import (
 )
 
 type Calculator interface {
-	CalculateOptimalPacks(totalItems int) []int
+	CalculateOptimalPacks(totalItems int) map[int]int
 }
 
 type calculator struct {
@@ -20,9 +20,9 @@ func NewCalculator(p pack.Pack) Calculator {
 	}
 }
 
-func (c *calculator) CalculateOptimalPacks(totalItems int) []int {
+func (c *calculator) CalculateOptimalPacks(totalItems int) map[int]int {
 	sizes := c.pack.GetSizes()
-	result := []int{}
+	result := make(map[int]int)
 
 	// TODO: replace with logger
 	fmt.Println()
@@ -35,13 +35,11 @@ func (c *calculator) CalculateOptimalPacks(totalItems int) []int {
 	r := c.optimizePacks(totalItems, sizes)
 	fmt.Printf("Initial optimal packs: %v\n", r)
 	// TODO: optimize generated packages
-	result = c.optimizePacks(sum(r), sizes)
-	fmt.Printf("Optimized packs: %v\n", result)
-	return result
+	return c.optimizePacks(sum(r), sizes)
 }
 
-func (c *calculator) optimizePacks(totalItems int, sizes []int) []int {
-	mresult := make(map[int]int)
+func (c *calculator) optimizePacks(totalItems int, sizes []int) map[int]int {
+	result := make(map[int]int)
 
 	for totalItems > 0 {
 		optimalSize := optimal(totalItems, sizes)
@@ -54,18 +52,12 @@ func (c *calculator) optimizePacks(totalItems int, sizes []int) []int {
 			sizes = remove(optimalSize, sizes)
 			numPacks = n
 		}
-		mresult[optimalSize] += numPacks
+		result[optimalSize] += numPacks
 		totalItems -= numPacks * optimalSize
 	}
 
-	fmt.Printf("Returning result: %v\n", mresult)
-	// TODO temp solution until we refactor
-	result := make([]int, 0)
-	for size, count := range mresult {
-		for i := 0; i < count; i++ {
-			result = append(result, size)
-		}
-	}
+	// TODO: replace with logger.debug
+	fmt.Printf("Returning result: %v\n", result)
 	return result
 }
 
@@ -113,10 +105,10 @@ func closest(number int, sizes []int) int {
 	return closestSize
 }
 
-func sum(items []int) int {
-	var sum int
-	for _, item := range items {
-		sum += item
+func sum(items map[int]int) int {
+	sum := 0
+	for size, count := range items {
+		sum += size * count
 	}
 	return sum
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func TestCalculateOptimalPacks(t *testing.T) {
-	p := pack.Pack{}
+	p := pack.NewInMemoryPack(pack.DefaultSizes)
 	calc := NewCalculator(p)
 
 	tests := []struct {

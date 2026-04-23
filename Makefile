@@ -5,8 +5,7 @@ all: test coverage build
 build:
 	go build -o $(PROJECT_ROOT)/bin/pack-optimizer ./cmd/optimizer
 
-test: 
-	goenv fmt vet test
+test: goenv fmt vet test
 
 gotest: 
 	@files=$$(go list ./...); \

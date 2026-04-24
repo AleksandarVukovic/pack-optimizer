@@ -34,3 +34,14 @@ coverage:
 clean:
 	rm -rf $(PROJECT_ROOT)/bin
 	rm -rf coverage.out coverage.html
+
+GOA_VERSION=v3.26.0
+GOA_CMD=go run goa.design/goa/v3/cmd/goa
+DESIGN_PKG=github.com/aleksandarv/pack-optimizer/design
+DESIGN_OUTPUT?=$(PROJECT_ROOT)
+
+goa-install:
+	go install goa.design/goa/v3/cmd/goa@$(GOA_VERSION)
+
+generate: goa-install
+	$(GOA_CMD) gen $(DESIGN_PKG) -o $(DESIGN_OUTPUT)

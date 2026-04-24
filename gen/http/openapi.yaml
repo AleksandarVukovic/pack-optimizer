@@ -1,0 +1,276 @@
+swagger: "2.0"
+info:
+    title: ""
+    version: 0.0.1
+host: localhost:80
+consumes:
+    - application/json
+    - application/xml
+    - application/gob
+produces:
+    - application/json
+    - application/xml
+    - application/gob
+paths:
+    /packs/calculate:
+        get:
+            tags:
+                - optimizer
+            summary: calculate optimizer
+            description: Calculate optimal pack combinations for a given number of items.
+            operationId: optimizer#calculate
+            parameters:
+                - name: CalculateRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/OptimizerCalculateRequestBody'
+                    required:
+                        - totalItems
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/OptimizerCalculateOKResponseBody'
+                        required:
+                            - packs
+                "400":
+                    description: Bad Request response.
+                    schema:
+                        $ref: '#/definitions/OptimizerCalculateBadRequestResponseBody'
+                        required:
+                            - packs
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/OptimizerCalculateInternalServerErrorResponseBody'
+                        required:
+                            - packs
+            schemes:
+                - http
+    /packs/sizes:
+        get:
+            tags:
+                - optimizer
+            summary: getSizes optimizer
+            description: Get the current pack sizes.
+            operationId: optimizer#getSizes
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/OptimizerGetSizesOKResponseBody'
+                        required:
+                            - sizes
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/OptimizerGetSizesInternalServerErrorResponseBody'
+                        required:
+                            - sizes
+            schemes:
+                - http
+        put:
+            tags:
+                - optimizer
+            summary: updateSizes optimizer
+            description: Update the pack sizes.
+            operationId: optimizer#updateSizes
+            parameters:
+                - name: UpdateSizesRequestBody
+                  in: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/OptimizerUpdateSizesRequestBody'
+                    required:
+                        - sizes
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: Bad Request response.
+                "500":
+                    description: Internal Server Error response.
+            schemes:
+                - http
+definitions:
+    OptimizerCalculateBadRequestResponseBody:
+        title: OptimizerCalculateBadRequestResponseBody
+        type: object
+        properties:
+            packs:
+                type: array
+                items:
+                    $ref: '#/definitions/Pack'
+                description: Optimal pack combinations (pack size -> quantity)
+                example:
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+        example:
+            packs:
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+        required:
+            - packs
+    OptimizerCalculateInternalServerErrorResponseBody:
+        title: OptimizerCalculateInternalServerErrorResponseBody
+        type: object
+        properties:
+            packs:
+                type: array
+                items:
+                    $ref: '#/definitions/Pack'
+                description: Optimal pack combinations (pack size -> quantity)
+                example:
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+        example:
+            packs:
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+        required:
+            - packs
+    OptimizerCalculateOKResponseBody:
+        title: OptimizerCalculateOKResponseBody
+        type: object
+        properties:
+            packs:
+                type: array
+                items:
+                    $ref: '#/definitions/Pack'
+                description: Optimal pack combinations (pack size -> quantity)
+                example:
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+                    - quantity: 5272053870220535793
+                      size: 4662976870903077339
+        example:
+            packs:
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+                - quantity: 5272053870220535793
+                  size: 4662976870903077339
+        required:
+            - packs
+    OptimizerCalculateRequestBody:
+        title: OptimizerCalculateRequestBody
+        type: object
+        properties:
+            totalItems:
+                type: integer
+                description: Total number of items to pack
+                example: 8185554547683514131
+                format: int64
+        example:
+            totalItems: 1085486130372098519
+        required:
+            - totalItems
+    OptimizerGetSizesInternalServerErrorResponseBody:
+        title: OptimizerGetSizesInternalServerErrorResponseBody
+        type: object
+        properties:
+            sizes:
+                type: array
+                items:
+                    type: integer
+                    example: 1918257353014262661
+                    format: int64
+                description: Current pack sizes
+                example:
+                    - 6260708044588554160
+                    - 3282394440830557121
+        example:
+            sizes:
+                - 438954304224264026
+                - 7907655686637625336
+        required:
+            - sizes
+    OptimizerGetSizesOKResponseBody:
+        title: OptimizerGetSizesOKResponseBody
+        type: object
+        properties:
+            sizes:
+                type: array
+                items:
+                    type: integer
+                    example: 8979397191667315905
+                    format: int64
+                description: Current pack sizes
+                example:
+                    - 6971954252077217635
+                    - 4264792648875790410
+                    - 8238345066217827580
+        example:
+            sizes:
+                - 813766795803773649
+                - 2895364921877497795
+                - 3829836179132556488
+                - 6421946500028491376
+        required:
+            - sizes
+    OptimizerUpdateSizesRequestBody:
+        title: OptimizerUpdateSizesRequestBody
+        type: object
+        properties:
+            sizes:
+                type: array
+                items:
+                    type: integer
+                    example: 1652425794516395077
+                    format: int64
+                description: New pack sizes to update
+                example:
+                    - 5774145257651053824
+                    - 2762821372524617023
+                    - 688497426298619293
+                    - 8710734583394690813
+        example:
+            sizes:
+                - 992998746164430739
+                - 5306824877470709098
+                - 5981623918863443287
+        required:
+            - sizes
+    Pack:
+        title: Pack
+        type: object
+        properties:
+            quantity:
+                type: integer
+                description: Quantity of this pack size needed
+                example: 4395447211202343993
+                format: int64
+            size:
+                type: integer
+                description: Size of the pack
+                example: 2825372120241419492
+                format: int64
+        description: Pack represents a pack size and the quantity needed.
+        example:
+            quantity: 360846742162874548
+            size: 700586563585638850
+        required:
+            - size
+            - quantity

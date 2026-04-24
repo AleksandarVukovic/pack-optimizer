@@ -1,14 +1,15 @@
 package calculator
 
 import (
-	"fmt"
+	"context"
 	"math"
 
+	"github.com/aleksandarv/pack-optimizer/internal/logger"
 	"github.com/aleksandarv/pack-optimizer/internal/pack"
 )
 
 type Calculator interface {
-	CalculateOptimalPacks(totalItems int) []pack.Pack
+	CalculateOptimalPacks(ctx context.Context, totalItems int) []pack.Pack
 }
 
 type calculator struct {
@@ -21,25 +22,24 @@ func NewCalculator(p pack.PackSvc) Calculator {
 	}
 }
 
-func (c *calculator) CalculateOptimalPacks(totalItems int) []pack.Pack {
-	sizes := c.psvc.GetSizes()
+func (c *calculator) CalculateOptimalPacks(ctx context.Context, totalItems int) []pack.Pack {
+	log := logger.FromCtx(ctx)
+	log.Debug("Calculating optimal packs", "totalItems", totalItems)
+
 	result := make([]pack.Pack, 0)
-
-	// TODO: replace with logger
-	fmt.Println()
-	fmt.Printf("-------Calculating optimal packs for %d items with available sizes: %v\n", totalItems, sizes)
-
 	if totalItems <= 0 {
 		return result
 	}
 
-	r := c.optimizePacks(totalItems, sizes)
-	fmt.Printf("Initial optimal packs: %v\n", r)
-	// TODO: optimize generated packages
-	return c.optimizePacks(sum(r), sizes)
+	sizes := c.psvc.GetSizes()
+	log.Debug("Allowed pack sizes", "sizes", sizes)
+	r := c.optimizePacks(ctx, totalItems, sizes)
+	log.Debug("Initial optimal packs", "packs", r)
+	return c.optimizePacks(ctx, sum(r), sizes)
 }
 
-func (c *calculator) optimizePacks(totalItems int, sizes []int) []pack.Pack {
+func (c *calculator) optimizePacks(ctx context.Context, totalItems int, sizes []int) []pack.Pack {
+	log := logger.FromCtx(ctx)
 	result := make([]pack.Pack, 0)
 	mresult := make(map[int]int)
 
@@ -59,7 +59,7 @@ func (c *calculator) optimizePacks(totalItems int, sizes []int) []pack.Pack {
 	}
 
 	// TODO: replace with logger.debug
-	fmt.Printf("Returning result: %v\n", mresult)
+	log.Debug("Optimized packs", "packs", mresult)
 	for size, quantity := range mresult {
 		result = append(result, pack.Pack{
 			Size:     size,

@@ -1,12 +1,15 @@
 package calculator
 
 import (
+	"context"
 	"testing"
 
+	"github.com/aleksandarv/pack-optimizer/internal/logger"
 	"github.com/aleksandarv/pack-optimizer/internal/pack"
 )
 
 func TestCalculateOptimalPacks(t *testing.T) {
+	ctx := logger.WithCtx(context.Background(), logger.NewLogger(false))
 	p := pack.NewInMemorySvc(pack.DefaultSizes)
 	calc := NewCalculator(p)
 
@@ -134,7 +137,7 @@ func TestCalculateOptimalPacks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := calc.CalculateOptimalPacks(tt.totalItems)
+			result := calc.CalculateOptimalPacks(ctx, tt.totalItems)
 			if len(result) != len(tt.expected) {
 				t.Errorf("CalculateOptimalPacks(%d) returned %d pack sizes, expected %d", tt.totalItems, len(result), len(tt.expected))
 			}
@@ -151,11 +154,13 @@ func TestCalculateOptimalPacks(t *testing.T) {
 }
 
 func TestCalculateOptimalPacks_WithHugeNumbers(t *testing.T) {
+	ctx := logger.WithCtx(context.Background(), logger.NewLogger(false))
+
 	const totalItems = 500000
 	p := pack.NewInMemorySvc([]int{23, 31, 53})
 	calc := NewCalculator(p)
 
-	result := calc.CalculateOptimalPacks(totalItems)
+	result := calc.CalculateOptimalPacks(ctx, totalItems)
 
 	expected := map[int]int{
 		23: 2,

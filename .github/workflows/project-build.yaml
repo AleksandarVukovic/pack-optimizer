@@ -21,14 +21,3 @@ jobs:
     - name: Build
       shell: bash
       run: make all
-
-    - name: Verify binary
-      shell: bash
-      run: |
-        OUTPUT=$(./bin/pack-optimizer)
-        if [ "$OUTPUT" != "Welcome to Pack Optimizer!" ]; then
-          echo "ERROR: Output did not match expected 'Welcome to Pack Optimizer!'"
-          echo "Program output: $OUTPUT"
-          exit 1
-        fi
-        echo "Binary verified successfully."

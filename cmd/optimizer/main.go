@@ -112,6 +112,7 @@ func main() {
 func loadFlagsFromEnv() {
 	envToFlag := map[string]string{
 		"DEBUG": "debug",
+		"PORT":  "port",
 	}
 	for env, flagName := range envToFlag {
 		if val := os.Getenv(env); val != "" {

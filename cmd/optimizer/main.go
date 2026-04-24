@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -119,8 +120,12 @@ func loadFlagsFromEnv() {
 	}
 }
 
-func errorHandler(logger *slog.Logger) func(context.Context, http.ResponseWriter, error) {
+func errorHandler(log *slog.Logger) func(context.Context, http.ResponseWriter, error) {
 	return func(ctx context.Context, w http.ResponseWriter, err error) {
-		logger.Error("GOA error", "error", err.Error())
+		if verr, ok := errors.AsType[*pack.ValidationError](err); ok {
+			log.Error("validation error", "error", verr.Error())
+			return
+		}
+		log.Error("GOA error", "error", err.Error())
 	}
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 
 	goaoptimizer "github.com/aleksandarv/pack-optimizer/gen/optimizer"
 	"github.com/aleksandarv/pack-optimizer/internal/calculator"
@@ -32,7 +33,13 @@ func (s *optimizersrvc) GetPackSizes(ctx context.Context) (res *goaoptimizer.Get
 func (s *optimizersrvc) UpdatePackSizes(ctx context.Context, p *goaoptimizer.UpdatePackSizesPayload) (err error) {
 	log := logger.FromCtx(ctx)
 	log.Info("optimizer.updateSizes")
-	return s.psvc.UpdateSizes(p.Sizes)
+	if err := s.psvc.UpdateSizes(p.Sizes); err != nil {
+		if verr, ok := errors.AsType[*pack.ValidationError](err); ok {
+			log.Error("error while updating pack sizes", "error", verr.Error())
+			return goaoptimizer.MakeBadRequest(verr)
+		}
+	}
+	return
 }
 
 func (s *optimizersrvc) Calculate(ctx context.Context, p *goaoptimizer.CalculatePayload) (res *goaoptimizer.CalculateResult, err error) {

@@ -1,7 +1,6 @@
 package pack
 
 import (
-	"errors"
 	"slices"
 	"sync"
 )
@@ -37,11 +36,11 @@ func (p *InMemomorySvc) UpdateSizes(newSizes []int) error {
 
 func validate(sizes []int) error {
 	if len(sizes) == 0 {
-		return errors.New("sizes cannot be empty")
+		return &ValidationError{"sizes cannot be empty"}
 	}
 	for _, size := range sizes {
 		if size <= 0 {
-			return errors.New("size must be positive integer")
+			return &ValidationError{"size must be positive integer"}
 		}
 	}
 	return nil

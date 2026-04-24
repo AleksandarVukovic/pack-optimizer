@@ -8,7 +8,7 @@ build:
 test: goenv fmt vet test
 
 gotest: 
-	@files=$$(go list ./...); \
+	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd); \
 	go test -v -race -timeout=30s $$files
 
 fmt:
@@ -21,7 +21,7 @@ goenv:
 	@go version
 
 coverage:
-	@files=$$(go list ./...); \
+	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd); \
 	go test -coverprofile=coverage.out $$files; \
 	go tool cover -html=coverage.out -o coverage.html
 	@total=$$(go tool cover -func=coverage.out | grep total: | awk '{print $$3}'); \

@@ -38,10 +38,10 @@ func (s *optimizersrvc) Calculate(ctx context.Context, p *optimizer.CalculatePay
 	log.Printf("optimizer.calculate")
 	var packs []*optimizer.Pack
 	result := s.c.CalculateOptimalPacks(p.TotalItems)
-	for size, quantity := range result {
+	for _, pack := range result {
 		packs = append(packs, &optimizer.Pack{
-			Size:     size,
-			Quantity: quantity,
+			Size:     pack.Size,
+			Quantity: pack.Quantity,
 		})
 	}
 

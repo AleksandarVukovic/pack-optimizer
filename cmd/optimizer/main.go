@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -64,13 +63,8 @@ func main() {
 		log.Debug("expose API", "verb", m.Verb, "path", m.Pattern, "method", m.Method)
 	}
 
-	rawURL := "http://localhost:" + strconv.Itoa(port)
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		panic(err)
-	}
-
-	srv := &http.Server{Addr: u.Host, Handler: mux, ReadHeaderTimeout: time.Second * 60}
+	addr := ":" + strconv.Itoa(port)
+	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: time.Second * 60}
 
 	errc := make(chan error)
 	go func() {
@@ -80,7 +74,7 @@ func main() {
 	}()
 
 	go func() {
-		log.Info("Start server on", "host", u.Host)
+		log.Info("Start server on", "host", addr)
 		errc <- srv.ListenAndServe()
 	}()
 
@@ -101,7 +95,7 @@ func main() {
 	})
 
 	// waiting on some signal to shutdown the server
-	err = <-errc
+	err := <-errc
 	log.Info("exiting server", "reason", err)
 
 	// trigger shutdown goroutine process

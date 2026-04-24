@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"syscall"
@@ -59,6 +60,14 @@ func main() {
 	))
 
 	server.Mount(mux, optimizerSrv)
+
+	// temporary solution just to show index page
+	mux.Handle("GET", "/", func(w http.ResponseWriter, r *http.Request) {
+		// docker build will ensure that index.html is in same place as binary
+		filePath := filepath.Join("index.html")
+		http.ServeFile(w, r, filePath)
+	})
+
 	for _, m := range optimizerSrv.Mounts {
 		log.Debug("expose API", "verb", m.Verb, "path", m.Pattern, "method", m.Method)
 	}

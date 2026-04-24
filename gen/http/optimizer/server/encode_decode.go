@@ -13,40 +13,70 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	optimizer "github.com/aleksandarv/pack-optimizer/gen/optimizer"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
 
-// EncodeGetSizesResponse returns an encoder for responses returned by the
-// optimizer getSizes endpoint.
-func EncodeGetSizesResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+// EncodeGetPackSizesResponse returns an encoder for responses returned by the
+// optimizer getPackSizes endpoint.
+func EncodeGetPackSizesResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
-		res, _ := v.(*optimizer.GetSizesResult)
+		res, _ := v.(*optimizer.GetPackSizesResult)
 		enc := encoder(ctx, w)
-		body := NewGetSizesOKResponseBody(res)
+		body := NewGetPackSizesResponseBody(res)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
 }
 
-// EncodeUpdateSizesResponse returns an encoder for responses returned by the
-// optimizer updateSizes endpoint.
-func EncodeUpdateSizesResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+// EncodeGetPackSizesError returns an encoder for errors returned by the
+// getPackSizes optimizer endpoint.
+func EncodeGetPackSizesError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "internal_server_error":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetPackSizesInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeUpdatePackSizesResponse returns an encoder for responses returned by
+// the optimizer updatePackSizes endpoint.
+func EncodeUpdatePackSizesResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	}
 }
 
-// DecodeUpdateSizesRequest returns a decoder for requests sent to the
-// optimizer updateSizes endpoint.
-func DecodeUpdateSizesRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*optimizer.UpdateSizesPayload, error) {
-	return func(r *http.Request) (*optimizer.UpdateSizesPayload, error) {
-		var payload *optimizer.UpdateSizesPayload
+// DecodeUpdatePackSizesRequest returns a decoder for requests sent to the
+// optimizer updatePackSizes endpoint.
+func DecodeUpdatePackSizesRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*optimizer.UpdatePackSizesPayload, error) {
+	return func(r *http.Request) (*optimizer.UpdatePackSizesPayload, error) {
+		var payload *optimizer.UpdatePackSizesPayload
 		var (
-			body UpdateSizesRequestBody
+			body UpdatePackSizesRequestBody
 			err  error
 		)
 		err = decoder(r).Decode(&body)
@@ -60,13 +90,55 @@ func DecodeUpdateSizesRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 			}
 			return payload, goa.DecodePayloadError(err.Error())
 		}
-		err = ValidateUpdateSizesRequestBody(&body)
+		err = ValidateUpdatePackSizesRequestBody(&body)
 		if err != nil {
 			return payload, err
 		}
-		payload = NewUpdateSizesPayload(&body)
+		payload = NewUpdatePackSizesPayload(&body)
 
 		return payload, nil
+	}
+}
+
+// EncodeUpdatePackSizesError returns an encoder for errors returned by the
+// updatePackSizes optimizer endpoint.
+func EncodeUpdatePackSizesError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "bad_request":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUpdatePackSizesBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "internal_server_error":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewUpdatePackSizesInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
 	}
 }
 
@@ -76,7 +148,7 @@ func EncodeCalculateResponse(encoder func(context.Context, http.ResponseWriter) 
 	return func(ctx context.Context, w http.ResponseWriter, v any) error {
 		res, _ := v.(*optimizer.CalculateResult)
 		enc := encoder(ctx, w)
-		body := NewCalculateOKResponseBody(res)
+		body := NewCalculateResponseBody(res)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
@@ -88,27 +160,71 @@ func DecodeCalculateRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 	return func(r *http.Request) (*optimizer.CalculatePayload, error) {
 		var payload *optimizer.CalculatePayload
 		var (
-			body CalculateRequestBody
-			err  error
+			quantity int
+			err      error
 		)
-		err = decoder(r).Decode(&body)
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return payload, goa.MissingPayloadError()
+		{
+			quantityRaw := r.URL.Query().Get("quantity")
+			if quantityRaw == "" {
+				err = goa.MergeErrors(err, goa.MissingFieldError("quantity", "query string"))
 			}
-			var gerr *goa.ServiceError
-			if errors.As(err, &gerr) {
-				return payload, gerr
+			v, err2 := strconv.ParseInt(quantityRaw, 10, strconv.IntSize)
+			if err2 != nil {
+				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("quantity", quantityRaw, "integer"))
 			}
-			return payload, goa.DecodePayloadError(err.Error())
+			quantity = int(v)
 		}
-		err = ValidateCalculateRequestBody(&body)
+		if quantity < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("quantity", quantity, 1, true))
+		}
 		if err != nil {
 			return payload, err
 		}
-		payload = NewCalculatePayload(&body)
+		payload = NewCalculatePayload(quantity)
 
 		return payload, nil
+	}
+}
+
+// EncodeCalculateError returns an encoder for errors returned by the calculate
+// optimizer endpoint.
+func EncodeCalculateError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "bad_request":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewCalculateBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "internal_server_error":
+			var res *goa.ServiceError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewCalculateInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
 	}
 }
 

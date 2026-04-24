@@ -6,25 +6,25 @@ import (
 	"sync"
 )
 
-type InMemomoryPack struct {
+type InMemomorySvc struct {
 	sync.Mutex
 	sizes []int
 }
 
-func NewInMemoryPack(sizes []int) Pack {
+func NewInMemorySvc(sizes []int) PackSvc {
 	validate(sizes)
-	return &InMemomoryPack{
+	return &InMemomorySvc{
 		sizes: sort(sizes),
 	}
 }
 
-func (p *InMemomoryPack) GetSizes() []int {
+func (p *InMemomorySvc) GetSizes() []int {
 	p.Lock()
 	defer p.Unlock()
 	return append([]int{}, p.sizes...)
 }
 
-func (p *InMemomoryPack) UpdateSizes(newSizes []int) error {
+func (p *InMemomorySvc) UpdateSizes(newSizes []int) error {
 	if err := validate(newSizes); err != nil {
 		return err
 	}

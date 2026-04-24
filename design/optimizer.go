@@ -2,51 +2,80 @@ package design
 
 import . "goa.design/goa/v3/dsl"
 
-var _ = Service("optimizer", func() {
-	Description("The optimizer service calculates optimal pack combinations for a given number of items.")
+var _ = API("pack-optimizer", func() {
+	Title("Pack Optimizer")
+	Description("Service to calculate optimal pack combinations for a given number of items")
+	Server("pack-optimizer", func() {
+		Host("localhost", func() {
+			URI("http://localhost:8080")
+		})
+	})
+})
 
-	Method("getSizes", func() {
+var _ = Service("optimizer", func() {
+	Description("Service calculates optimal pack combinations for a given number of items.")
+
+	Method("getPackSizes", func() {
 		Description("Get the current pack sizes.")
 		Result(func() {
-			Field(1, "sizes", ArrayOf(Int), "Current pack sizes")
+			Field(1, "sizes", ArrayOf(Int), "Current pack sizes", func() {
+				Example([]int{250, 500, 1000})
+			})
 			Required("sizes")
 		})
+
+		Error("internal_server_error", ErrorResult)
+
 		HTTP(func() {
 			GET("/packs/sizes")
 			Response(StatusOK)
-			Response(StatusInternalServerError)
+			Response("internal_server_error", StatusInternalServerError)
 		})
 	})
 
-	Method("updateSizes", func() {
+	Method("updatePackSizes", func() {
 		Description("Update the pack sizes.")
 		Payload(func() {
-			Field(1, "sizes", ArrayOf(Int), "New pack sizes to update")
+			Field(1, "sizes", ArrayOf(Int), "New pack sizes to update", func() {
+				Example([]int{250, 500, 1000})
+			})
 			Required("sizes")
 		})
+
+		Error("bad_request", ErrorResult)
+		Error("internal_server_error", ErrorResult)
+
 		HTTP(func() {
 			PUT("/packs/sizes")
 			Response(StatusNoContent)
-			Response(StatusBadRequest)
-			Response(StatusInternalServerError)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_server_error", StatusInternalServerError)
 		})
 	})
 
 	Method("calculate", func() {
 		Description("Calculate optimal pack combinations for a given number of items.")
 		Payload(func() {
-			Field(1, "totalItems", Int, "Total number of items to pack")
-			Required("totalItems")
+			Field(1, "quantity", Int, "Total number of items to pack", func() {
+				Minimum(1)
+				Example(500)
+			})
+			Required("quantity")
 		})
 		Result(func() {
 			Field(1, "packs", ArrayOf(Pack), "Optimal pack combinations (pack size -> quantity)")
 			Required("packs")
 		})
+
+		Error("bad_request", ErrorResult)
+		Error("internal_server_error", ErrorResult)
+
 		HTTP(func() {
 			GET("/packs/calculate")
+			Param("quantity")
 			Response(StatusOK)
-			Response(StatusBadRequest)
-			Response(StatusInternalServerError)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_server_error", StatusInternalServerError)
 		})
 	})
 

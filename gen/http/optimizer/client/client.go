@@ -18,13 +18,13 @@ import (
 
 // Client lists the optimizer service endpoint HTTP clients.
 type Client struct {
-	// GetSizes Doer is the HTTP client used to make requests to the getSizes
-	// endpoint.
-	GetSizesDoer goahttp.Doer
+	// GetPackSizes Doer is the HTTP client used to make requests to the
+	// getPackSizes endpoint.
+	GetPackSizesDoer goahttp.Doer
 
-	// UpdateSizes Doer is the HTTP client used to make requests to the updateSizes
-	// endpoint.
-	UpdateSizesDoer goahttp.Doer
+	// UpdatePackSizes Doer is the HTTP client used to make requests to the
+	// updatePackSizes endpoint.
+	UpdatePackSizesDoer goahttp.Doer
 
 	// Calculate Doer is the HTTP client used to make requests to the calculate
 	// endpoint.
@@ -50,8 +50,8 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		GetSizesDoer:        doer,
-		UpdateSizesDoer:     doer,
+		GetPackSizesDoer:    doer,
+		UpdatePackSizesDoer: doer,
 		CalculateDoer:       doer,
 		RestoreResponseBody: restoreBody,
 		scheme:              scheme,
@@ -61,34 +61,34 @@ func NewClient(
 	}
 }
 
-// GetSizes returns an endpoint that makes HTTP requests to the optimizer
-// service getSizes server.
-func (c *Client) GetSizes() goa.Endpoint {
+// GetPackSizes returns an endpoint that makes HTTP requests to the optimizer
+// service getPackSizes server.
+func (c *Client) GetPackSizes() goa.Endpoint {
 	var (
-		decodeResponse = DecodeGetSizesResponse(c.decoder, c.RestoreResponseBody)
+		decodeResponse = DecodeGetPackSizesResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v any) (any, error) {
-		req, err := c.BuildGetSizesRequest(ctx, v)
+		req, err := c.BuildGetPackSizesRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.GetSizesDoer.Do(req)
+		resp, err := c.GetPackSizesDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("optimizer", "getSizes", err)
+			return nil, goahttp.ErrRequestError("optimizer", "getPackSizes", err)
 		}
 		return decodeResponse(resp)
 	}
 }
 
-// UpdateSizes returns an endpoint that makes HTTP requests to the optimizer
-// service updateSizes server.
-func (c *Client) UpdateSizes() goa.Endpoint {
+// UpdatePackSizes returns an endpoint that makes HTTP requests to the
+// optimizer service updatePackSizes server.
+func (c *Client) UpdatePackSizes() goa.Endpoint {
 	var (
-		encodeRequest  = EncodeUpdateSizesRequest(c.encoder)
-		decodeResponse = DecodeUpdateSizesResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeUpdatePackSizesRequest(c.encoder)
+		decodeResponse = DecodeUpdatePackSizesResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v any) (any, error) {
-		req, err := c.BuildUpdateSizesRequest(ctx, v)
+		req, err := c.BuildUpdatePackSizesRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -96,9 +96,9 @@ func (c *Client) UpdateSizes() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.UpdateSizesDoer.Do(req)
+		resp, err := c.UpdatePackSizesDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("optimizer", "updateSizes", err)
+			return nil, goahttp.ErrRequestError("optimizer", "updatePackSizes", err)
 		}
 		return decodeResponse(resp)
 	}

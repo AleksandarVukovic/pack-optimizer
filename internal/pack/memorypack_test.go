@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewInMemoryPack(t *testing.T) {
+func TestNewInMemorySvc(t *testing.T) {
 	tests := []struct {
 		name     string
 		sizes    []int
@@ -36,10 +36,10 @@ func TestNewInMemoryPack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pack := NewInMemoryPack(tt.sizes)
-			assert.NotNil(t, pack)
-			assert.IsType(t, &InMemomoryPack{}, pack)
-			result := pack.GetSizes()
+			svc := NewInMemorySvc(tt.sizes)
+			assert.NotNil(t, svc)
+			assert.IsType(t, &InMemomorySvc{}, svc)
+			result := svc.GetSizes()
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -47,9 +47,9 @@ func TestNewInMemoryPack(t *testing.T) {
 
 func TestNewInMemoryPack_DefensiveCopy(t *testing.T) {
 	original := []int{250, 500, 1000}
-	pack := NewInMemoryPack(original)
+	svc := NewInMemorySvc(original)
 	original[0] = 555
-	result := pack.GetSizes()
+	result := svc.GetSizes()
 
 	assert.Equal(t, []int{250, 500, 1000}, result)
 }
@@ -115,7 +115,7 @@ func TestUpdateSizes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pack := NewInMemoryPack(tt.initialSizes)
+			pack := NewInMemorySvc(tt.initialSizes)
 			err := pack.UpdateSizes(tt.newSizes)
 
 			if tt.expectError {
@@ -133,19 +133,19 @@ func TestUpdateSizes(t *testing.T) {
 }
 
 func TestUpdateSizes_DefensiveCopy(t *testing.T) {
-	pack := NewInMemoryPack([]int{250})
+	svc := NewInMemorySvc([]int{250})
 	newSizes := []int{500, 1000, 2000}
 
-	err := pack.UpdateSizes(newSizes)
+	err := svc.UpdateSizes(newSizes)
 	assert.NoError(t, err)
 
 	newSizes[0] = 9999
-	result := pack.GetSizes()
+	result := svc.GetSizes()
 	assert.Equal(t, []int{500, 1000, 2000}, result)
 }
 
-func TestInMemoryPackImplementsPackInterface(t *testing.T) {
-	pack := NewInMemoryPack([]int{250, 500})
-	var _ Pack = pack
-	assert.NotNil(t, pack)
+func TestInMemorySvcImplementsPackInterface(t *testing.T) {
+	svc := NewInMemorySvc([]int{250, 500})
+	var _ PackSvc = svc
+	assert.NotNil(t, svc)
 }

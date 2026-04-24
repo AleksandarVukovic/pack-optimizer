@@ -8,7 +8,7 @@ import (
 )
 
 type Calculator interface {
-	CalculateOptimalPacks(totalItems int) map[int]int
+	CalculateOptimalPacks(totalItems int) []pack.Pack
 }
 
 type calculator struct {
@@ -21,9 +21,9 @@ func NewCalculator(p pack.PackSvc) Calculator {
 	}
 }
 
-func (c *calculator) CalculateOptimalPacks(totalItems int) map[int]int {
+func (c *calculator) CalculateOptimalPacks(totalItems int) []pack.Pack {
 	sizes := c.psvc.GetSizes()
-	result := make(map[int]int)
+	result := make([]pack.Pack, 0)
 
 	// TODO: replace with logger
 	fmt.Println()
@@ -39,8 +39,9 @@ func (c *calculator) CalculateOptimalPacks(totalItems int) map[int]int {
 	return c.optimizePacks(sum(r), sizes)
 }
 
-func (c *calculator) optimizePacks(totalItems int, sizes []int) map[int]int {
-	result := make(map[int]int)
+func (c *calculator) optimizePacks(totalItems int, sizes []int) []pack.Pack {
+	result := make([]pack.Pack, 0)
+	mresult := make(map[int]int)
 
 	for totalItems > 0 {
 		optimalSize := optimal(totalItems, sizes)
@@ -53,12 +54,18 @@ func (c *calculator) optimizePacks(totalItems int, sizes []int) map[int]int {
 			sizes = remove(optimalSize, sizes)
 			numPacks = n
 		}
-		result[optimalSize] += numPacks
+		mresult[optimalSize] += numPacks
 		totalItems -= numPacks * optimalSize
 	}
 
 	// TODO: replace with logger.debug
-	fmt.Printf("Returning result: %v\n", result)
+	fmt.Printf("Returning result: %v\n", mresult)
+	for size, quantity := range mresult {
+		result = append(result, pack.Pack{
+			Size:     size,
+			Quantity: quantity,
+		})
+	}
 	return result
 }
 
@@ -106,10 +113,10 @@ func closest(number int, sizes []int) int {
 	return closestSize
 }
 
-func sum(items map[int]int) int {
+func sum(packs []pack.Pack) int {
 	sum := 0
-	for size, count := range items {
-		sum += size * count
+	for _, pack := range packs {
+		sum += pack.Size * pack.Quantity
 	}
 	return sum
 }

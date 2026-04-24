@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/aleksandarv/pack-optimizer/internal/pack"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCalculateOptimalPacks(t *testing.T) {
@@ -136,21 +135,42 @@ func TestCalculateOptimalPacks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := calc.CalculateOptimalPacks(tt.totalItems)
-			assert.Equal(t, tt.expected, result, "CalculateOptimalPacks(%d) should return %v, but got %v", tt.totalItems, tt.expected, result)
+			if len(result) != len(tt.expected) {
+				t.Errorf("CalculateOptimalPacks(%d) returned %d pack sizes, expected %d", tt.totalItems, len(result), len(tt.expected))
+			}
+			for _, pack := range result {
+				expectedQuantity, exists := tt.expected[pack.Size]
+				if !exists {
+					t.Errorf("CalculateOptimalPacks(%d) returned unexpected pack size %d with count %d", tt.totalItems, pack.Size, pack.Quantity)
+				} else if pack.Quantity != expectedQuantity {
+					t.Errorf("CalculateOptimalPacks(%d) returned quantity %d for pack size %d, expected %d", tt.totalItems, pack.Quantity, pack.Size, expectedQuantity)
+				}
+			}
 		})
 	}
 }
 
 func TestCalculateOptimalPacks_WithHugeNumbers(t *testing.T) {
+	const totalItems = 500000
 	p := pack.NewInMemorySvc([]int{23, 31, 53})
 	calc := NewCalculator(p)
 
-	result := calc.CalculateOptimalPacks(500000)
+	result := calc.CalculateOptimalPacks(totalItems)
 
 	expected := map[int]int{
 		23: 2,
 		31: 7,
 		53: 9429,
 	}
-	assert.Equal(t, expected, result)
+	if len(result) != len(expected) {
+		t.Errorf("CalculateOptimalPacks(%d) returned %d pack sizes, expected %d", totalItems, len(result), len(expected))
+	}
+	for _, pack := range result {
+		expectedQuantity, exists := expected[pack.Size]
+		if !exists {
+			t.Errorf("CalculateOptimalPacks(%d) returned unexpected pack size %d with count %d", totalItems, pack.Size, pack.Quantity)
+		} else if pack.Quantity != expectedQuantity {
+			t.Errorf("CalculateOptimalPacks(%d) returned quantity %d for pack size %d, expected %d", totalItems, pack.Quantity, pack.Size, expectedQuantity)
+		}
+	}
 }

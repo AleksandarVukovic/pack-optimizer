@@ -18,6 +18,8 @@ WORKDIR /root/
 
 COPY --from=builder /app/bin/pack-optimizer ./pack-optimizer
 
-EXPOSE 8080
+ENV PORT=8080
+
+EXPOSE $PORT
 
 CMD ["./pack-optimizer"]

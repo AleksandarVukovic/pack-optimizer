@@ -10,21 +10,22 @@ package optimizer
 
 import (
 	"context"
+
+	goa "goa.design/goa/v3/pkg"
 )
 
-// The optimizer service calculates optimal pack combinations for a given
-// number of items.
+// Service calculates optimal pack combinations for a given number of items.
 type Service interface {
 	// Get the current pack sizes.
-	GetSizes(context.Context) (res *GetSizesResult, err error)
+	GetPackSizes(context.Context) (res *GetPackSizesResult, err error)
 	// Update the pack sizes.
-	UpdateSizes(context.Context, *UpdateSizesPayload) (err error)
+	UpdatePackSizes(context.Context, *UpdatePackSizesPayload) (err error)
 	// Calculate optimal pack combinations for a given number of items.
 	Calculate(context.Context, *CalculatePayload) (res *CalculateResult, err error)
 }
 
 // APIName is the name of the API as defined in the design.
-const APIName = "optimizer"
+const APIName = "pack-optimizer"
 
 // APIVersion is the version of the API as defined in the design.
 const APIVersion = "0.0.1"
@@ -37,13 +38,13 @@ const ServiceName = "optimizer"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"getSizes", "updateSizes", "calculate"}
+var MethodNames = [3]string{"getPackSizes", "updatePackSizes", "calculate"}
 
 // CalculatePayload is the payload type of the optimizer service calculate
 // method.
 type CalculatePayload struct {
 	// Total number of items to pack
-	TotalItems int
+	Quantity int
 }
 
 // CalculateResult is the result type of the optimizer service calculate method.
@@ -52,8 +53,9 @@ type CalculateResult struct {
 	Packs []*Pack
 }
 
-// GetSizesResult is the result type of the optimizer service getSizes method.
-type GetSizesResult struct {
+// GetPackSizesResult is the result type of the optimizer service getPackSizes
+// method.
+type GetPackSizesResult struct {
 	// Current pack sizes
 	Sizes []int
 }
@@ -66,9 +68,19 @@ type Pack struct {
 	Quantity int
 }
 
-// UpdateSizesPayload is the payload type of the optimizer service updateSizes
-// method.
-type UpdateSizesPayload struct {
+// UpdatePackSizesPayload is the payload type of the optimizer service
+// updatePackSizes method.
+type UpdatePackSizesPayload struct {
 	// New pack sizes to update
 	Sizes []int
+}
+
+// MakeInternalServerError builds a goa.ServiceError from an error.
+func MakeInternalServerError(err error) *goa.ServiceError {
+	return goa.NewServiceError(err, "internal_server_error", false, false, false)
+}
+
+// MakeBadRequest builds a goa.ServiceError from an error.
+func MakeBadRequest(err error) *goa.ServiceError {
+	return goa.NewServiceError(err, "bad_request", false, false, false)
 }

@@ -11,6 +11,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -19,13 +20,13 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
-// BuildGetSizesRequest instantiates a HTTP request object with method and path
-// set to call the "optimizer" service "getSizes" endpoint
-func (c *Client) BuildGetSizesRequest(ctx context.Context, v any) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetSizesOptimizerPath()}
+// BuildGetPackSizesRequest instantiates a HTTP request object with method and
+// path set to call the "optimizer" service "getPackSizes" endpoint
+func (c *Client) BuildGetPackSizesRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetPackSizesOptimizerPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("optimizer", "getSizes", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("optimizer", "getPackSizes", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -34,10 +35,13 @@ func (c *Client) BuildGetSizesRequest(ctx context.Context, v any) (*http.Request
 	return req, nil
 }
 
-// DecodeGetSizesResponse returns a decoder for responses returned by the
-// optimizer getSizes endpoint. restoreBody controls whether the response body
-// should be restored after having been read.
-func DecodeGetSizesResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+// DecodeGetPackSizesResponse returns a decoder for responses returned by the
+// optimizer getPackSizes endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeGetPackSizesResponse may return the following errors:
+//   - "internal_server_error" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
+func DecodeGetPackSizesResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
 			b, err := io.ReadAll(resp.Body)
@@ -54,33 +58,47 @@ func DecodeGetSizesResponse(decoder func(*http.Response) goahttp.Decoder, restor
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body GetSizesOKResponseBody
+				body GetPackSizesResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("optimizer", "getSizes", err)
+				return nil, goahttp.ErrDecodingError("optimizer", "getPackSizes", err)
 			}
-			err = ValidateGetSizesOKResponseBody(&body)
+			err = ValidateGetPackSizesResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("optimizer", "getSizes", err)
+				return nil, goahttp.ErrValidationError("optimizer", "getPackSizes", err)
 			}
-			res := NewGetSizesResultOK(&body)
+			res := NewGetPackSizesResultOK(&body)
 			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body GetPackSizesInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("optimizer", "getPackSizes", err)
+			}
+			err = ValidateGetPackSizesInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("optimizer", "getPackSizes", err)
+			}
+			return nil, NewGetPackSizesInternalServerError(&body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("optimizer", "getSizes", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("optimizer", "getPackSizes", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// BuildUpdateSizesRequest instantiates a HTTP request object with method and
-// path set to call the "optimizer" service "updateSizes" endpoint
-func (c *Client) BuildUpdateSizesRequest(ctx context.Context, v any) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateSizesOptimizerPath()}
+// BuildUpdatePackSizesRequest instantiates a HTTP request object with method
+// and path set to call the "optimizer" service "updatePackSizes" endpoint
+func (c *Client) BuildUpdatePackSizesRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdatePackSizesOptimizerPath()}
 	req, err := http.NewRequest("PUT", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("optimizer", "updateSizes", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("optimizer", "updatePackSizes", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -89,26 +107,30 @@ func (c *Client) BuildUpdateSizesRequest(ctx context.Context, v any) (*http.Requ
 	return req, nil
 }
 
-// EncodeUpdateSizesRequest returns an encoder for requests sent to the
-// optimizer updateSizes server.
-func EncodeUpdateSizesRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+// EncodeUpdatePackSizesRequest returns an encoder for requests sent to the
+// optimizer updatePackSizes server.
+func EncodeUpdatePackSizesRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
 	return func(req *http.Request, v any) error {
-		p, ok := v.(*optimizer.UpdateSizesPayload)
+		p, ok := v.(*optimizer.UpdatePackSizesPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("optimizer", "updateSizes", "*optimizer.UpdateSizesPayload", v)
+			return goahttp.ErrInvalidType("optimizer", "updatePackSizes", "*optimizer.UpdatePackSizesPayload", v)
 		}
-		body := NewUpdateSizesRequestBody(p)
+		body := NewUpdatePackSizesRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("optimizer", "updateSizes", err)
+			return goahttp.ErrEncodingError("optimizer", "updatePackSizes", err)
 		}
 		return nil
 	}
 }
 
-// DecodeUpdateSizesResponse returns a decoder for responses returned by the
-// optimizer updateSizes endpoint. restoreBody controls whether the response
-// body should be restored after having been read.
-func DecodeUpdateSizesResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+// DecodeUpdatePackSizesResponse returns a decoder for responses returned by
+// the optimizer updatePackSizes endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+// DecodeUpdatePackSizesResponse may return the following errors:
+//   - "bad_request" (type *goa.ServiceError): http.StatusBadRequest
+//   - "internal_server_error" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
+func DecodeUpdatePackSizesResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
 			b, err := io.ReadAll(resp.Body)
@@ -125,9 +147,37 @@ func DecodeUpdateSizesResponse(decoder func(*http.Response) goahttp.Decoder, res
 		switch resp.StatusCode {
 		case http.StatusNoContent:
 			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdatePackSizesBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("optimizer", "updatePackSizes", err)
+			}
+			err = ValidateUpdatePackSizesBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("optimizer", "updatePackSizes", err)
+			}
+			return nil, NewUpdatePackSizesBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdatePackSizesInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("optimizer", "updatePackSizes", err)
+			}
+			err = ValidateUpdatePackSizesInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("optimizer", "updatePackSizes", err)
+			}
+			return nil, NewUpdatePackSizesInternalServerError(&body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("optimizer", "updateSizes", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("optimizer", "updatePackSizes", resp.StatusCode, string(body))
 		}
 	}
 }
@@ -155,10 +205,9 @@ func EncodeCalculateRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 		if !ok {
 			return goahttp.ErrInvalidType("optimizer", "calculate", "*optimizer.CalculatePayload", v)
 		}
-		body := NewCalculateRequestBody(p)
-		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("optimizer", "calculate", err)
-		}
+		values := req.URL.Query()
+		values.Add("quantity", fmt.Sprintf("%v", p.Quantity))
+		req.URL.RawQuery = values.Encode()
 		return nil
 	}
 }
@@ -166,6 +215,10 @@ func EncodeCalculateRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 // DecodeCalculateResponse returns a decoder for responses returned by the
 // optimizer calculate endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
+// DecodeCalculateResponse may return the following errors:
+//   - "bad_request" (type *goa.ServiceError): http.StatusBadRequest
+//   - "internal_server_error" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
 func DecodeCalculateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
 	return func(resp *http.Response) (any, error) {
 		if restoreBody {
@@ -183,19 +236,47 @@ func DecodeCalculateResponse(decoder func(*http.Response) goahttp.Decoder, resto
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body CalculateOKResponseBody
+				body CalculateResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("optimizer", "calculate", err)
 			}
-			err = ValidateCalculateOKResponseBody(&body)
+			err = ValidateCalculateResponseBody(&body)
 			if err != nil {
 				return nil, goahttp.ErrValidationError("optimizer", "calculate", err)
 			}
 			res := NewCalculateResultOK(&body)
 			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body CalculateBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("optimizer", "calculate", err)
+			}
+			err = ValidateCalculateBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("optimizer", "calculate", err)
+			}
+			return nil, NewCalculateBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body CalculateInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("optimizer", "calculate", err)
+			}
+			err = ValidateCalculateInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("optimizer", "calculate", err)
+			}
+			return nil, NewCalculateInternalServerError(&body)
 		default:
 			body, _ := io.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("optimizer", "calculate", resp.StatusCode, string(body))

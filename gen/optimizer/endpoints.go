@@ -16,41 +16,41 @@ import (
 
 // Endpoints wraps the "optimizer" service endpoints.
 type Endpoints struct {
-	GetSizes    goa.Endpoint
-	UpdateSizes goa.Endpoint
-	Calculate   goa.Endpoint
+	GetPackSizes    goa.Endpoint
+	UpdatePackSizes goa.Endpoint
+	Calculate       goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "optimizer" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		GetSizes:    NewGetSizesEndpoint(s),
-		UpdateSizes: NewUpdateSizesEndpoint(s),
-		Calculate:   NewCalculateEndpoint(s),
+		GetPackSizes:    NewGetPackSizesEndpoint(s),
+		UpdatePackSizes: NewUpdatePackSizesEndpoint(s),
+		Calculate:       NewCalculateEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "optimizer" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
-	e.GetSizes = m(e.GetSizes)
-	e.UpdateSizes = m(e.UpdateSizes)
+	e.GetPackSizes = m(e.GetPackSizes)
+	e.UpdatePackSizes = m(e.UpdatePackSizes)
 	e.Calculate = m(e.Calculate)
 }
 
-// NewGetSizesEndpoint returns an endpoint function that calls the method
-// "getSizes" of service "optimizer".
-func NewGetSizesEndpoint(s Service) goa.Endpoint {
+// NewGetPackSizesEndpoint returns an endpoint function that calls the method
+// "getPackSizes" of service "optimizer".
+func NewGetPackSizesEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		return s.GetSizes(ctx)
+		return s.GetPackSizes(ctx)
 	}
 }
 
-// NewUpdateSizesEndpoint returns an endpoint function that calls the method
-// "updateSizes" of service "optimizer".
-func NewUpdateSizesEndpoint(s Service) goa.Endpoint {
+// NewUpdatePackSizesEndpoint returns an endpoint function that calls the
+// method "updatePackSizes" of service "optimizer".
+func NewUpdatePackSizesEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		p := req.(*UpdateSizesPayload)
-		return nil, s.UpdateSizes(ctx, p)
+		p := req.(*UpdatePackSizesPayload)
+		return nil, s.UpdatePackSizes(ctx, p)
 	}
 }
 

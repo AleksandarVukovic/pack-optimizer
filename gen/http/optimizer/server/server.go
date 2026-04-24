@@ -19,10 +19,10 @@ import (
 
 // Server lists the optimizer service endpoint HTTP handlers.
 type Server struct {
-	Mounts      []*MountPoint
-	GetSizes    http.Handler
-	UpdateSizes http.Handler
-	Calculate   http.Handler
+	Mounts          []*MountPoint
+	GetPackSizes    http.Handler
+	UpdatePackSizes http.Handler
+	Calculate       http.Handler
 }
 
 // MountPoint holds information about the mounted endpoints.
@@ -52,13 +52,13 @@ func New(
 ) *Server {
 	return &Server{
 		Mounts: []*MountPoint{
-			{"GetSizes", "GET", "/packs/sizes"},
-			{"UpdateSizes", "PUT", "/packs/sizes"},
+			{"GetPackSizes", "GET", "/packs/sizes"},
+			{"UpdatePackSizes", "PUT", "/packs/sizes"},
 			{"Calculate", "GET", "/packs/calculate"},
 		},
-		GetSizes:    NewGetSizesHandler(e.GetSizes, mux, decoder, encoder, errhandler, formatter),
-		UpdateSizes: NewUpdateSizesHandler(e.UpdateSizes, mux, decoder, encoder, errhandler, formatter),
-		Calculate:   NewCalculateHandler(e.Calculate, mux, decoder, encoder, errhandler, formatter),
+		GetPackSizes:    NewGetPackSizesHandler(e.GetPackSizes, mux, decoder, encoder, errhandler, formatter),
+		UpdatePackSizes: NewUpdatePackSizesHandler(e.UpdatePackSizes, mux, decoder, encoder, errhandler, formatter),
+		Calculate:       NewCalculateHandler(e.Calculate, mux, decoder, encoder, errhandler, formatter),
 	}
 }
 
@@ -67,8 +67,8 @@ func (s *Server) Service() string { return "optimizer" }
 
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
-	s.GetSizes = m(s.GetSizes)
-	s.UpdateSizes = m(s.UpdateSizes)
+	s.GetPackSizes = m(s.GetPackSizes)
+	s.UpdatePackSizes = m(s.UpdatePackSizes)
 	s.Calculate = m(s.Calculate)
 }
 
@@ -77,8 +77,8 @@ func (s *Server) MethodNames() []string { return optimizer.MethodNames[:] }
 
 // Mount configures the mux to serve the optimizer endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
-	MountGetSizesHandler(mux, h.GetSizes)
-	MountUpdateSizesHandler(mux, h.UpdateSizes)
+	MountGetPackSizesHandler(mux, h.GetPackSizes)
+	MountUpdatePackSizesHandler(mux, h.UpdatePackSizes)
 	MountCalculateHandler(mux, h.Calculate)
 }
 
@@ -87,9 +87,9 @@ func (s *Server) Mount(mux goahttp.Muxer) {
 	Mount(mux, s)
 }
 
-// MountGetSizesHandler configures the mux to serve the "optimizer" service
-// "getSizes" endpoint.
-func MountGetSizesHandler(mux goahttp.Muxer, h http.Handler) {
+// MountGetPackSizesHandler configures the mux to serve the "optimizer" service
+// "getPackSizes" endpoint.
+func MountGetPackSizesHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -99,9 +99,9 @@ func MountGetSizesHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("GET", "/packs/sizes", f)
 }
 
-// NewGetSizesHandler creates a HTTP handler which loads the HTTP request and
-// calls the "optimizer" service "getSizes" endpoint.
-func NewGetSizesHandler(
+// NewGetPackSizesHandler creates a HTTP handler which loads the HTTP request
+// and calls the "optimizer" service "getPackSizes" endpoint.
+func NewGetPackSizesHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -110,12 +110,12 @@ func NewGetSizesHandler(
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		encodeResponse = EncodeGetSizesResponse(encoder)
-		encodeError    = goahttp.ErrorEncoder(encoder, formatter)
+		encodeResponse = EncodeGetPackSizesResponse(encoder)
+		encodeError    = EncodeGetPackSizesError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "getSizes")
+		ctx = context.WithValue(ctx, goa.MethodKey, "getPackSizes")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "optimizer")
 		var err error
 		res, err := endpoint(ctx, nil)
@@ -133,9 +133,9 @@ func NewGetSizesHandler(
 	})
 }
 
-// MountUpdateSizesHandler configures the mux to serve the "optimizer" service
-// "updateSizes" endpoint.
-func MountUpdateSizesHandler(mux goahttp.Muxer, h http.Handler) {
+// MountUpdatePackSizesHandler configures the mux to serve the "optimizer"
+// service "updatePackSizes" endpoint.
+func MountUpdatePackSizesHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -145,9 +145,9 @@ func MountUpdateSizesHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("PUT", "/packs/sizes", f)
 }
 
-// NewUpdateSizesHandler creates a HTTP handler which loads the HTTP request
-// and calls the "optimizer" service "updateSizes" endpoint.
-func NewUpdateSizesHandler(
+// NewUpdatePackSizesHandler creates a HTTP handler which loads the HTTP
+// request and calls the "optimizer" service "updatePackSizes" endpoint.
+func NewUpdatePackSizesHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -156,13 +156,13 @@ func NewUpdateSizesHandler(
 	formatter func(ctx context.Context, err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeUpdateSizesRequest(mux, decoder)
-		encodeResponse = EncodeUpdateSizesResponse(encoder)
-		encodeError    = goahttp.ErrorEncoder(encoder, formatter)
+		decodeRequest  = DecodeUpdatePackSizesRequest(mux, decoder)
+		encodeResponse = EncodeUpdatePackSizesResponse(encoder)
+		encodeError    = EncodeUpdatePackSizesError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "updateSizes")
+		ctx = context.WithValue(ctx, goa.MethodKey, "updatePackSizes")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "optimizer")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -211,7 +211,7 @@ func NewCalculateHandler(
 	var (
 		decodeRequest  = DecodeCalculateRequest(mux, decoder)
 		encodeResponse = EncodeCalculateResponse(encoder)
-		encodeError    = goahttp.ErrorEncoder(encoder, formatter)
+		encodeError    = EncodeCalculateError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))

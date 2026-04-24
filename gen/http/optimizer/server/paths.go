@@ -8,13 +8,13 @@
 
 package server
 
-// GetSizesOptimizerPath returns the URL path to the optimizer service getSizes HTTP endpoint.
-func GetSizesOptimizerPath() string {
+// GetPackSizesOptimizerPath returns the URL path to the optimizer service getPackSizes HTTP endpoint.
+func GetPackSizesOptimizerPath() string {
 	return "/packs/sizes"
 }
 
-// UpdateSizesOptimizerPath returns the URL path to the optimizer service updateSizes HTTP endpoint.
-func UpdateSizesOptimizerPath() string {
+// UpdatePackSizesOptimizerPath returns the URL path to the optimizer service updatePackSizes HTTP endpoint.
+func UpdatePackSizesOptimizerPath() string {
 	return "/packs/sizes"
 }
 

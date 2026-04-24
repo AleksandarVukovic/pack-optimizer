@@ -3,7 +3,8 @@ package calculator
 import (
 	"fmt"
 	"math"
-	"pack-optimizer/internal/pack"
+
+	"github.com/aleksandarv/pack-optimizer/internal/pack"
 )
 
 type Calculator interface {
@@ -11,17 +12,17 @@ type Calculator interface {
 }
 
 type calculator struct {
-	pack pack.Pack
+	psvc pack.PackSvc
 }
 
-func NewCalculator(p pack.Pack) Calculator {
+func NewCalculator(p pack.PackSvc) Calculator {
 	return &calculator{
-		pack: p,
+		psvc: p,
 	}
 }
 
 func (c *calculator) CalculateOptimalPacks(totalItems int) map[int]int {
-	sizes := c.pack.GetSizes()
+	sizes := c.psvc.GetSizes()
 	result := make(map[int]int)
 
 	// TODO: replace with logger

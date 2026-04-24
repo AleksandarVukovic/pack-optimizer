@@ -13,39 +13,118 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// UpdateSizesRequestBody is the type of the "optimizer" service "updateSizes"
-// endpoint HTTP request body.
-type UpdateSizesRequestBody struct {
+// UpdatePackSizesRequestBody is the type of the "optimizer" service
+// "updatePackSizes" endpoint HTTP request body.
+type UpdatePackSizesRequestBody struct {
 	// New pack sizes to update
 	Sizes []int `form:"sizes" json:"sizes" xml:"sizes"`
 }
 
-// CalculateRequestBody is the type of the "optimizer" service "calculate"
-// endpoint HTTP request body.
-type CalculateRequestBody struct {
-	// Total number of items to pack
-	TotalItems int `form:"totalItems" json:"totalItems" xml:"totalItems"`
-}
-
-// GetSizesOKResponseBody is the type of the "optimizer" service "getSizes"
-// endpoint HTTP response body.
-type GetSizesOKResponseBody struct {
+// GetPackSizesResponseBody is the type of the "optimizer" service
+// "getPackSizes" endpoint HTTP response body.
+type GetPackSizesResponseBody struct {
 	// Current pack sizes
 	Sizes []int `form:"sizes,omitempty" json:"sizes,omitempty" xml:"sizes,omitempty"`
 }
 
-// CalculateOKResponseBody is the type of the "optimizer" service "calculate"
+// CalculateResponseBody is the type of the "optimizer" service "calculate"
 // endpoint HTTP response body.
-type CalculateOKResponseBody struct {
+type CalculateResponseBody struct {
 	// Optimal pack combinations (pack size -> quantity)
 	Packs []*PackResponseBody `form:"packs,omitempty" json:"packs,omitempty" xml:"packs,omitempty"`
 }
 
-// GetSizesInternalServerErrorResponseBody is used to define fields on response
-// body types.
-type GetSizesInternalServerErrorResponseBody struct {
-	// Current pack sizes
-	Sizes []int `form:"sizes,omitempty" json:"sizes,omitempty" xml:"sizes,omitempty"`
+// GetPackSizesInternalServerErrorResponseBody is the type of the "optimizer"
+// service "getPackSizes" endpoint HTTP response body for the
+// "internal_server_error" error.
+type GetPackSizesInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// UpdatePackSizesBadRequestResponseBody is the type of the "optimizer" service
+// "updatePackSizes" endpoint HTTP response body for the "bad_request" error.
+type UpdatePackSizesBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// UpdatePackSizesInternalServerErrorResponseBody is the type of the
+// "optimizer" service "updatePackSizes" endpoint HTTP response body for the
+// "internal_server_error" error.
+type UpdatePackSizesInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// CalculateBadRequestResponseBody is the type of the "optimizer" service
+// "calculate" endpoint HTTP response body for the "bad_request" error.
+type CalculateBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// CalculateInternalServerErrorResponseBody is the type of the "optimizer"
+// service "calculate" endpoint HTTP response body for the
+// "internal_server_error" error.
+type CalculateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
 // PackResponseBody is used to define fields on response body types.
@@ -56,24 +135,10 @@ type PackResponseBody struct {
 	Quantity *int `form:"quantity,omitempty" json:"quantity,omitempty" xml:"quantity,omitempty"`
 }
 
-// CalculateBadRequestResponseBody is used to define fields on response body
-// types.
-type CalculateBadRequestResponseBody struct {
-	// Optimal pack combinations (pack size -> quantity)
-	Packs []*PackResponseBody `form:"packs,omitempty" json:"packs,omitempty" xml:"packs,omitempty"`
-}
-
-// CalculateInternalServerErrorResponseBody is used to define fields on
-// response body types.
-type CalculateInternalServerErrorResponseBody struct {
-	// Optimal pack combinations (pack size -> quantity)
-	Packs []*PackResponseBody `form:"packs,omitempty" json:"packs,omitempty" xml:"packs,omitempty"`
-}
-
-// NewUpdateSizesRequestBody builds the HTTP request body from the payload of
-// the "updateSizes" endpoint of the "optimizer" service.
-func NewUpdateSizesRequestBody(p *optimizer.UpdateSizesPayload) *UpdateSizesRequestBody {
-	body := &UpdateSizesRequestBody{}
+// NewUpdatePackSizesRequestBody builds the HTTP request body from the payload
+// of the "updatePackSizes" endpoint of the "optimizer" service.
+func NewUpdatePackSizesRequestBody(p *optimizer.UpdatePackSizesPayload) *UpdatePackSizesRequestBody {
+	body := &UpdatePackSizesRequestBody{}
 	if p.Sizes != nil {
 		body.Sizes = make([]int, len(p.Sizes))
 		for i, val := range p.Sizes {
@@ -85,19 +150,10 @@ func NewUpdateSizesRequestBody(p *optimizer.UpdateSizesPayload) *UpdateSizesRequ
 	return body
 }
 
-// NewCalculateRequestBody builds the HTTP request body from the payload of the
-// "calculate" endpoint of the "optimizer" service.
-func NewCalculateRequestBody(p *optimizer.CalculatePayload) *CalculateRequestBody {
-	body := &CalculateRequestBody{
-		TotalItems: p.TotalItems,
-	}
-	return body
-}
-
-// NewGetSizesResultOK builds a "optimizer" service "getSizes" endpoint result
-// from a HTTP "OK" response.
-func NewGetSizesResultOK(body *GetSizesOKResponseBody) *optimizer.GetSizesResult {
-	v := &optimizer.GetSizesResult{}
+// NewGetPackSizesResultOK builds a "optimizer" service "getPackSizes" endpoint
+// result from a HTTP "OK" response.
+func NewGetPackSizesResultOK(body *GetPackSizesResponseBody) *optimizer.GetPackSizesResult {
+	v := &optimizer.GetPackSizesResult{}
 	v.Sizes = make([]int, len(body.Sizes))
 	for i, val := range body.Sizes {
 		v.Sizes[i] = val
@@ -106,9 +162,54 @@ func NewGetSizesResultOK(body *GetSizesOKResponseBody) *optimizer.GetSizesResult
 	return v
 }
 
+// NewGetPackSizesInternalServerError builds a optimizer service getPackSizes
+// endpoint internal_server_error error.
+func NewGetPackSizesInternalServerError(body *GetPackSizesInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewUpdatePackSizesBadRequest builds a optimizer service updatePackSizes
+// endpoint bad_request error.
+func NewUpdatePackSizesBadRequest(body *UpdatePackSizesBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewUpdatePackSizesInternalServerError builds a optimizer service
+// updatePackSizes endpoint internal_server_error error.
+func NewUpdatePackSizesInternalServerError(body *UpdatePackSizesInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // NewCalculateResultOK builds a "optimizer" service "calculate" endpoint
 // result from a HTTP "OK" response.
-func NewCalculateResultOK(body *CalculateOKResponseBody) *optimizer.CalculateResult {
+func NewCalculateResultOK(body *CalculateResponseBody) *optimizer.CalculateResult {
 	v := &optimizer.CalculateResult{}
 	v.Packs = make([]*optimizer.Pack, len(body.Packs))
 	for i, val := range body.Packs {
@@ -122,18 +223,48 @@ func NewCalculateResultOK(body *CalculateOKResponseBody) *optimizer.CalculateRes
 	return v
 }
 
-// ValidateGetSizesOKResponseBody runs the validations defined on
-// GetSizesOKResponseBody
-func ValidateGetSizesOKResponseBody(body *GetSizesOKResponseBody) (err error) {
+// NewCalculateBadRequest builds a optimizer service calculate endpoint
+// bad_request error.
+func NewCalculateBadRequest(body *CalculateBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewCalculateInternalServerError builds a optimizer service calculate
+// endpoint internal_server_error error.
+func NewCalculateInternalServerError(body *CalculateInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// ValidateGetPackSizesResponseBody runs the validations defined on
+// GetPackSizesResponseBody
+func ValidateGetPackSizesResponseBody(body *GetPackSizesResponseBody) (err error) {
 	if body.Sizes == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("sizes", "body"))
 	}
 	return
 }
 
-// ValidateCalculateOKResponseBody runs the validations defined on
-// CalculateOKResponseBody
-func ValidateCalculateOKResponseBody(body *CalculateOKResponseBody) (err error) {
+// ValidateCalculateResponseBody runs the validations defined on
+// CalculateResponseBody
+func ValidateCalculateResponseBody(body *CalculateResponseBody) (err error) {
 	if body.Packs == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("packs", "body"))
 	}
@@ -147,11 +278,122 @@ func ValidateCalculateOKResponseBody(body *CalculateOKResponseBody) (err error) 
 	return
 }
 
-// ValidateGetSizesInternalServerErrorResponseBody runs the validations defined
-// on GetSizesInternal Server ErrorResponseBody
-func ValidateGetSizesInternalServerErrorResponseBody(body *GetSizesInternalServerErrorResponseBody) (err error) {
-	if body.Sizes == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("sizes", "body"))
+// ValidateGetPackSizesInternalServerErrorResponseBody runs the validations
+// defined on getPackSizes_internal_server_error_response_body
+func ValidateGetPackSizesInternalServerErrorResponseBody(body *GetPackSizesInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateUpdatePackSizesBadRequestResponseBody runs the validations defined
+// on updatePackSizes_bad_request_response_body
+func ValidateUpdatePackSizesBadRequestResponseBody(body *UpdatePackSizesBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateUpdatePackSizesInternalServerErrorResponseBody runs the validations
+// defined on updatePackSizes_internal_server_error_response_body
+func ValidateUpdatePackSizesInternalServerErrorResponseBody(body *UpdatePackSizesInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateCalculateBadRequestResponseBody runs the validations defined on
+// calculate_bad_request_response_body
+func ValidateCalculateBadRequestResponseBody(body *CalculateBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateCalculateInternalServerErrorResponseBody runs the validations
+// defined on calculate_internal_server_error_response_body
+func ValidateCalculateInternalServerErrorResponseBody(body *CalculateInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
 	}
 	return
 }
@@ -163,38 +405,6 @@ func ValidatePackResponseBody(body *PackResponseBody) (err error) {
 	}
 	if body.Quantity == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("quantity", "body"))
-	}
-	return
-}
-
-// ValidateCalculateBadRequestResponseBody runs the validations defined on
-// CalculateBad RequestResponseBody
-func ValidateCalculateBadRequestResponseBody(body *CalculateBadRequestResponseBody) (err error) {
-	if body.Packs == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("packs", "body"))
-	}
-	for _, e := range body.Packs {
-		if e != nil {
-			if err2 := ValidatePackResponseBody(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	return
-}
-
-// ValidateCalculateInternalServerErrorResponseBody runs the validations
-// defined on CalculateInternal Server ErrorResponseBody
-func ValidateCalculateInternalServerErrorResponseBody(body *CalculateInternalServerErrorResponseBody) (err error) {
-	if body.Packs == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("packs", "body"))
-	}
-	for _, e := range body.Packs {
-		if e != nil {
-			if err2 := ValidatePackResponseBody(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
 	}
 	return
 }

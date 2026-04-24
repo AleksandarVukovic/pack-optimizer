@@ -11,20 +11,21 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	optimizer "github.com/aleksandarv/pack-optimizer/gen/optimizer"
 	goa "goa.design/goa/v3/pkg"
 )
 
-// BuildUpdateSizesPayload builds the payload for the optimizer updateSizes
-// endpoint from CLI flags.
-func BuildUpdateSizesPayload(optimizerUpdateSizesBody string) (*optimizer.UpdateSizesPayload, error) {
+// BuildUpdatePackSizesPayload builds the payload for the optimizer
+// updatePackSizes endpoint from CLI flags.
+func BuildUpdatePackSizesPayload(optimizerUpdatePackSizesBody string) (*optimizer.UpdatePackSizesPayload, error) {
 	var err error
-	var body UpdateSizesRequestBody
+	var body UpdatePackSizesRequestBody
 	{
-		err = json.Unmarshal([]byte(optimizerUpdateSizesBody), &body)
+		err = json.Unmarshal([]byte(optimizerUpdatePackSizesBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"sizes\": [\n         5187262674716634592,\n         7976492007773777393,\n         8733443723489356396\n      ]\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"sizes\": [\n         250,\n         500,\n         1000\n      ]\n   }'")
 		}
 		if body.Sizes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("sizes", "body"))
@@ -33,7 +34,7 @@ func BuildUpdateSizesPayload(optimizerUpdateSizesBody string) (*optimizer.Update
 			return nil, err
 		}
 	}
-	v := &optimizer.UpdateSizesPayload{}
+	v := &optimizer.UpdatePackSizesPayload{}
 	if body.Sizes != nil {
 		v.Sizes = make([]int, len(body.Sizes))
 		for i, val := range body.Sizes {
@@ -48,18 +49,25 @@ func BuildUpdateSizesPayload(optimizerUpdateSizesBody string) (*optimizer.Update
 
 // BuildCalculatePayload builds the payload for the optimizer calculate
 // endpoint from CLI flags.
-func BuildCalculatePayload(optimizerCalculateBody string) (*optimizer.CalculatePayload, error) {
+func BuildCalculatePayload(optimizerCalculateQuantity string) (*optimizer.CalculatePayload, error) {
 	var err error
-	var body CalculateRequestBody
+	var quantity int
 	{
-		err = json.Unmarshal([]byte(optimizerCalculateBody), &body)
+		var v int64
+		v, err = strconv.ParseInt(optimizerCalculateQuantity, 10, strconv.IntSize)
+		quantity = int(v)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"totalItems\": 5521850667853442423\n   }'")
+			return nil, fmt.Errorf("invalid value for quantity, must be INT")
+		}
+		if quantity < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("quantity", quantity, 1, true))
+		}
+		if err != nil {
+			return nil, err
 		}
 	}
-	v := &optimizer.CalculatePayload{
-		TotalItems: body.TotalItems,
-	}
+	v := &optimizer.CalculatePayload{}
+	v.Quantity = quantity
 
 	return v, nil
 }

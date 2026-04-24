@@ -16,37 +16,49 @@ import (
 
 // Client is the "optimizer" service client.
 type Client struct {
-	GetSizesEndpoint    goa.Endpoint
-	UpdateSizesEndpoint goa.Endpoint
-	CalculateEndpoint   goa.Endpoint
+	GetPackSizesEndpoint    goa.Endpoint
+	UpdatePackSizesEndpoint goa.Endpoint
+	CalculateEndpoint       goa.Endpoint
 }
 
 // NewClient initializes a "optimizer" service client given the endpoints.
-func NewClient(getSizes, updateSizes, calculate goa.Endpoint) *Client {
+func NewClient(getPackSizes, updatePackSizes, calculate goa.Endpoint) *Client {
 	return &Client{
-		GetSizesEndpoint:    getSizes,
-		UpdateSizesEndpoint: updateSizes,
-		CalculateEndpoint:   calculate,
+		GetPackSizesEndpoint:    getPackSizes,
+		UpdatePackSizesEndpoint: updatePackSizes,
+		CalculateEndpoint:       calculate,
 	}
 }
 
-// GetSizes calls the "getSizes" endpoint of the "optimizer" service.
-func (c *Client) GetSizes(ctx context.Context) (res *GetSizesResult, err error) {
+// GetPackSizes calls the "getPackSizes" endpoint of the "optimizer" service.
+// GetPackSizes may return the following errors:
+//   - "internal_server_error" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) GetPackSizes(ctx context.Context) (res *GetPackSizesResult, err error) {
 	var ires any
-	ires, err = c.GetSizesEndpoint(ctx, nil)
+	ires, err = c.GetPackSizesEndpoint(ctx, nil)
 	if err != nil {
 		return
 	}
-	return ires.(*GetSizesResult), nil
+	return ires.(*GetPackSizesResult), nil
 }
 
-// UpdateSizes calls the "updateSizes" endpoint of the "optimizer" service.
-func (c *Client) UpdateSizes(ctx context.Context, p *UpdateSizesPayload) (err error) {
-	_, err = c.UpdateSizesEndpoint(ctx, p)
+// UpdatePackSizes calls the "updatePackSizes" endpoint of the "optimizer"
+// service.
+// UpdatePackSizes may return the following errors:
+//   - "bad_request" (type *goa.ServiceError)
+//   - "internal_server_error" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) UpdatePackSizes(ctx context.Context, p *UpdatePackSizesPayload) (err error) {
+	_, err = c.UpdatePackSizesEndpoint(ctx, p)
 	return
 }
 
 // Calculate calls the "calculate" endpoint of the "optimizer" service.
+// Calculate may return the following errors:
+//   - "bad_request" (type *goa.ServiceError)
+//   - "internal_server_error" (type *goa.ServiceError)
+//   - error: internal error
 func (c *Client) Calculate(ctx context.Context, p *CalculatePayload) (res *CalculateResult, err error) {
 	var ires any
 	ires, err = c.CalculateEndpoint(ctx, p)

@@ -1,14 +1,14 @@
 package calculator
 
 import (
-	"pack-optimizer/internal/pack"
 	"testing"
 
+	"github.com/aleksandarv/pack-optimizer/internal/pack"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCalculateOptimalPacks(t *testing.T) {
-	p := pack.NewInMemoryPack(pack.DefaultSizes)
+	p := pack.NewInMemorySvc(pack.DefaultSizes)
 	calc := NewCalculator(p)
 
 	tests := []struct {
@@ -142,7 +142,7 @@ func TestCalculateOptimalPacks(t *testing.T) {
 }
 
 func TestCalculateOptimalPacks_WithHugeNumbers(t *testing.T) {
-	p := pack.NewInMemoryPack([]int{23, 31, 53})
+	p := pack.NewInMemorySvc([]int{23, 31, 53})
 	calc := NewCalculator(p)
 
 	result := calc.CalculateOptimalPacks(500000)

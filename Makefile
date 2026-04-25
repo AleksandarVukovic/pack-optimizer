@@ -8,16 +8,21 @@ GOA_CMD=go run goa.design/goa/v3/cmd/goa
 DESIGN_PKG=github.com/aleksandarv/pack-optimizer/design
 DESIGN_OUTPUT?=$(PROJECT_ROOT)
 
+API_URL?=http://localhost:8080
+
 all: test coverage build
 
 build:
 	go build -o ./bin/pack-optimizer ./cmd/optimizer; \
 
-test: goenv fmt vet test
+test: goenv fmt vet gotest
 
-gotest: 
-	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd); \
+gotest:
+	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd | grep -v /test); \
 	go test -v -race -timeout=30s $$files
+
+integration-test:
+	API_URL=$(API_URL) go test -v ./test/integration/...
 
 fmt:
 	go fmt ./...
@@ -29,7 +34,7 @@ goenv:
 	@go version
 
 coverage:
-	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd); \
+	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd | grep -v /test); \
 	go test -coverprofile=coverage.out $$files; \
 	go tool cover -html=coverage.out -o coverage.html
 	@total=$$(go tool cover -func=coverage.out | grep total: | awk '{print $$3}'); \

@@ -16,6 +16,8 @@ import (
 
 // Service calculates optimal pack combinations for a given number of items.
 type Service interface {
+	// Returns the health status of the service.
+	Health(context.Context) (res *HealthResult, err error)
 	// Get the current pack sizes.
 	GetPackSizes(context.Context) (res *GetPackSizesResult, err error)
 	// Update the pack sizes.
@@ -38,7 +40,7 @@ const ServiceName = "optimizer"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"getPackSizes", "updatePackSizes", "calculate"}
+var MethodNames = [4]string{"health", "getPackSizes", "updatePackSizes", "calculate"}
 
 // CalculatePayload is the payload type of the optimizer service calculate
 // method.
@@ -58,6 +60,12 @@ type CalculateResult struct {
 type GetPackSizesResult struct {
 	// Current pack sizes
 	Sizes []int
+}
+
+// HealthResult is the result type of the optimizer service health method.
+type HealthResult struct {
+	// Health status of the service
+	Status string
 }
 
 // Pack represents a pack size and the quantity needed.

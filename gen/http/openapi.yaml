@@ -13,6 +13,26 @@ produces:
     - application/xml
     - application/gob
 paths:
+    /health:
+        get:
+            tags:
+                - optimizer
+            summary: health optimizer
+            description: Returns the health status of the service.
+            operationId: optimizer#health
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        $ref: '#/definitions/OptimizerHealthResponseBody'
+                        required:
+                            - status
+                "500":
+                    description: Internal Server Error response.
+                    schema:
+                        $ref: '#/definitions/OptimizerHealthInternalServerErrorResponseBody'
+            schemes:
+                - http
     /packs/calculate:
         get:
             tags:
@@ -99,7 +119,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: false
+                example: true
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -142,7 +162,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -158,11 +178,11 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: calculate_internal_server_error_response_body result type (default view)
         example:
             fault: true
@@ -188,20 +208,18 @@ definitions:
                     $ref: '#/definitions/Pack'
                 description: Optimal pack combinations (pack size -> quantity)
                 example:
-                    - quantity: 5462019687617304141
-                      size: 9022841764491673247
-                    - quantity: 5462019687617304141
-                      size: 9022841764491673247
-                    - quantity: 5462019687617304141
-                      size: 9022841764491673247
-                    - quantity: 5462019687617304141
-                      size: 9022841764491673247
+                    - quantity: 1609558464246327244
+                      size: 5614756764895872828
+                    - quantity: 1609558464246327244
+                      size: 5614756764895872828
+                    - quantity: 1609558464246327244
+                      size: 5614756764895872828
         example:
             packs:
-                - quantity: 5462019687617304141
-                  size: 9022841764491673247
-                - quantity: 5462019687617304141
-                  size: 9022841764491673247
+                - quantity: 1609558464246327244
+                  size: 5614756764895872828
+                - quantity: 1609558464246327244
+                  size: 5614756764895872828
         required:
             - packs
     OptimizerGetPackSizesInternalServerErrorResponseBody:
@@ -234,11 +252,11 @@ definitions:
                 example: true
         description: getPackSizes_internal_server_error_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
-            temporary: true
+            temporary: false
             timeout: true
         required:
             - name
@@ -255,7 +273,7 @@ definitions:
                 type: array
                 items:
                     type: integer
-                    example: 6303717791078139494
+                    example: 4633574668665543999
                     format: int64
                 description: Current pack sizes
                 example:
@@ -269,6 +287,61 @@ definitions:
                 - 1000
         required:
             - sizes
+    OptimizerHealthInternalServerErrorResponseBody:
+        title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+        type: object
+        properties:
+            fault:
+                type: boolean
+                description: Is the error a server-side fault?
+                example: true
+            id:
+                type: string
+                description: ID is a unique identifier for this particular occurrence of the problem.
+                example: 123abc
+            message:
+                type: string
+                description: Message is a human-readable explanation specific to this occurrence of the problem.
+                example: parameter 'p' must be an integer
+            name:
+                type: string
+                description: Name is the name of this class of errors.
+                example: bad_request
+            temporary:
+                type: boolean
+                description: Is the error temporary?
+                example: true
+            timeout:
+                type: boolean
+                description: Is the error a timeout?
+                example: true
+        description: health_internal_server_error_response_body result type (default view)
+        example:
+            fault: true
+            id: 123abc
+            message: parameter 'p' must be an integer
+            name: bad_request
+            temporary: false
+            timeout: true
+        required:
+            - name
+            - id
+            - message
+            - temporary
+            - timeout
+            - fault
+    OptimizerHealthResponseBody:
+        title: OptimizerHealthResponseBody
+        type: object
+        properties:
+            status:
+                type: string
+                description: Health status of the service
+                example: ok
+        example:
+            status: ok
+        required:
+            - status
     OptimizerUpdatePackSizesBadRequestResponseBody:
         title: 'Mediatype identifier: application/vnd.goa.error; view=default'
         type: object
@@ -292,19 +365,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: true
+                example: false
             timeout:
                 type: boolean
                 description: Is the error a timeout?
                 example: true
         description: updatePackSizes_bad_request_response_body result type (default view)
         example:
-            fault: true
+            fault: false
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: true
-            timeout: true
+            timeout: false
         required:
             - name
             - id
@@ -319,7 +392,7 @@ definitions:
             fault:
                 type: boolean
                 description: Is the error a server-side fault?
-                example: true
+                example: false
             id:
                 type: string
                 description: ID is a unique identifier for this particular occurrence of the problem.
@@ -335,19 +408,19 @@ definitions:
             temporary:
                 type: boolean
                 description: Is the error temporary?
-                example: false
+                example: true
             timeout:
                 type: boolean
                 description: Is the error a timeout?
-                example: true
+                example: false
         description: updatePackSizes_internal_server_error_response_body result type (default view)
         example:
-            fault: false
+            fault: true
             id: 123abc
             message: parameter 'p' must be an integer
             name: bad_request
             temporary: false
-            timeout: true
+            timeout: false
         required:
             - name
             - id
@@ -363,7 +436,7 @@ definitions:
                 type: array
                 items:
                     type: integer
-                    example: 8273859547409707958
+                    example: 6692593150548685321
                     format: int64
                 description: New pack sizes to update
                 example:
@@ -384,17 +457,17 @@ definitions:
             quantity:
                 type: integer
                 description: Quantity of this pack size needed
-                example: 3739404606963245427
+                example: 1330956490353766758
                 format: int64
             size:
                 type: integer
                 description: Size of the pack
-                example: 1532246533111311543
+                example: 669619572349922072
                 format: int64
         description: Pack represents a pack size and the quantity needed.
         example:
-            quantity: 8393564039498840699
-            size: 7943703641370370520
+            quantity: 2594967611078269106
+            size: 354376545860708946
         required:
             - size
             - quantity

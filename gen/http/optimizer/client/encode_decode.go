@@ -20,6 +20,78 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
+// BuildHealthRequest instantiates a HTTP request object with method and path
+// set to call the "optimizer" service "health" endpoint
+func (c *Client) BuildHealthRequest(ctx context.Context, v any) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: HealthOptimizerPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("optimizer", "health", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// DecodeHealthResponse returns a decoder for responses returned by the
+// optimizer health endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeHealthResponse may return the following errors:
+//   - "internal_server_error" (type *goa.ServiceError): http.StatusInternalServerError
+//   - error: internal error
+func DecodeHealthResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body HealthResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("optimizer", "health", err)
+			}
+			err = ValidateHealthResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("optimizer", "health", err)
+			}
+			res := NewHealthResultOK(&body)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body HealthInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("optimizer", "health", err)
+			}
+			err = ValidateHealthInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("optimizer", "health", err)
+			}
+			return nil, NewHealthInternalServerError(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("optimizer", "health", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildGetPackSizesRequest instantiates a HTTP request object with method and
 // path set to call the "optimizer" service "getPackSizes" endpoint
 func (c *Client) BuildGetPackSizesRequest(ctx context.Context, v any) (*http.Request, error) {

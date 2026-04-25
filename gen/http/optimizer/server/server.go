@@ -20,6 +20,7 @@ import (
 // Server lists the optimizer service endpoint HTTP handlers.
 type Server struct {
 	Mounts          []*MountPoint
+	Health          http.Handler
 	GetPackSizes    http.Handler
 	UpdatePackSizes http.Handler
 	Calculate       http.Handler
@@ -52,10 +53,12 @@ func New(
 ) *Server {
 	return &Server{
 		Mounts: []*MountPoint{
+			{"Health", "GET", "/health"},
 			{"GetPackSizes", "GET", "/packs/sizes"},
 			{"UpdatePackSizes", "PUT", "/packs/sizes"},
 			{"Calculate", "GET", "/packs/calculate"},
 		},
+		Health:          NewHealthHandler(e.Health, mux, decoder, encoder, errhandler, formatter),
 		GetPackSizes:    NewGetPackSizesHandler(e.GetPackSizes, mux, decoder, encoder, errhandler, formatter),
 		UpdatePackSizes: NewUpdatePackSizesHandler(e.UpdatePackSizes, mux, decoder, encoder, errhandler, formatter),
 		Calculate:       NewCalculateHandler(e.Calculate, mux, decoder, encoder, errhandler, formatter),
@@ -67,6 +70,7 @@ func (s *Server) Service() string { return "optimizer" }
 
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
+	s.Health = m(s.Health)
 	s.GetPackSizes = m(s.GetPackSizes)
 	s.UpdatePackSizes = m(s.UpdatePackSizes)
 	s.Calculate = m(s.Calculate)
@@ -77,6 +81,7 @@ func (s *Server) MethodNames() []string { return optimizer.MethodNames[:] }
 
 // Mount configures the mux to serve the optimizer endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
+	MountHealthHandler(mux, h.Health)
 	MountGetPackSizesHandler(mux, h.GetPackSizes)
 	MountUpdatePackSizesHandler(mux, h.UpdatePackSizes)
 	MountCalculateHandler(mux, h.Calculate)
@@ -85,6 +90,52 @@ func Mount(mux goahttp.Muxer, h *Server) {
 // Mount configures the mux to serve the optimizer endpoints.
 func (s *Server) Mount(mux goahttp.Muxer) {
 	Mount(mux, s)
+}
+
+// MountHealthHandler configures the mux to serve the "optimizer" service
+// "health" endpoint.
+func MountHealthHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/health", f)
+}
+
+// NewHealthHandler creates a HTTP handler which loads the HTTP request and
+// calls the "optimizer" service "health" endpoint.
+func NewHealthHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		encodeResponse = EncodeHealthResponse(encoder)
+		encodeError    = EncodeHealthError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "health")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "optimizer")
+		var err error
+		res, err := endpoint(ctx, nil)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
 }
 
 // MountGetPackSizesHandler configures the mux to serve the "optimizer" service

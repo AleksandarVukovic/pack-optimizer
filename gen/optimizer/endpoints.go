@@ -16,6 +16,7 @@ import (
 
 // Endpoints wraps the "optimizer" service endpoints.
 type Endpoints struct {
+	Health          goa.Endpoint
 	GetPackSizes    goa.Endpoint
 	UpdatePackSizes goa.Endpoint
 	Calculate       goa.Endpoint
@@ -24,6 +25,7 @@ type Endpoints struct {
 // NewEndpoints wraps the methods of the "optimizer" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
+		Health:          NewHealthEndpoint(s),
 		GetPackSizes:    NewGetPackSizesEndpoint(s),
 		UpdatePackSizes: NewUpdatePackSizesEndpoint(s),
 		Calculate:       NewCalculateEndpoint(s),
@@ -32,9 +34,18 @@ func NewEndpoints(s Service) *Endpoints {
 
 // Use applies the given middleware to all the "optimizer" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
+	e.Health = m(e.Health)
 	e.GetPackSizes = m(e.GetPackSizes)
 	e.UpdatePackSizes = m(e.UpdatePackSizes)
 	e.Calculate = m(e.Calculate)
+}
+
+// NewHealthEndpoint returns an endpoint function that calls the method
+// "health" of service "optimizer".
+func NewHealthEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		return s.Health(ctx)
+	}
 }
 
 // NewGetPackSizesEndpoint returns an endpoint function that calls the method

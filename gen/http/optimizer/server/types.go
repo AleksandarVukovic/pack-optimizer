@@ -20,6 +20,13 @@ type UpdatePackSizesRequestBody struct {
 	Sizes []int `form:"sizes,omitempty" json:"sizes,omitempty" xml:"sizes,omitempty"`
 }
 
+// HealthResponseBody is the type of the "optimizer" service "health" endpoint
+// HTTP response body.
+type HealthResponseBody struct {
+	// Health status of the service
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
 // GetPackSizesResponseBody is the type of the "optimizer" service
 // "getPackSizes" endpoint HTTP response body.
 type GetPackSizesResponseBody struct {
@@ -32,6 +39,24 @@ type GetPackSizesResponseBody struct {
 type CalculateResponseBody struct {
 	// Optimal pack combinations (pack size -> quantity)
 	Packs []*PackResponseBody `form:"packs" json:"packs" xml:"packs"`
+}
+
+// HealthInternalServerErrorResponseBody is the type of the "optimizer" service
+// "health" endpoint HTTP response body for the "internal_server_error" error.
+type HealthInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
 // GetPackSizesInternalServerErrorResponseBody is the type of the "optimizer"
@@ -135,6 +160,15 @@ type PackResponseBody struct {
 	Quantity int `form:"quantity" json:"quantity" xml:"quantity"`
 }
 
+// NewHealthResponseBody builds the HTTP response body from the result of the
+// "health" endpoint of the "optimizer" service.
+func NewHealthResponseBody(res *optimizer.HealthResult) *HealthResponseBody {
+	body := &HealthResponseBody{
+		Status: res.Status,
+	}
+	return body
+}
+
 // NewGetPackSizesResponseBody builds the HTTP response body from the result of
 // the "getPackSizes" endpoint of the "optimizer" service.
 func NewGetPackSizesResponseBody(res *optimizer.GetPackSizesResult) *GetPackSizesResponseBody {
@@ -165,6 +199,20 @@ func NewCalculateResponseBody(res *optimizer.CalculateResult) *CalculateResponse
 		}
 	} else {
 		body.Packs = []*PackResponseBody{}
+	}
+	return body
+}
+
+// NewHealthInternalServerErrorResponseBody builds the HTTP response body from
+// the result of the "health" endpoint of the "optimizer" service.
+func NewHealthInternalServerErrorResponseBody(res *goa.ServiceError) *HealthInternalServerErrorResponseBody {
+	body := &HealthInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
 	}
 	return body
 }

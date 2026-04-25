@@ -16,18 +16,33 @@ import (
 
 // Client is the "optimizer" service client.
 type Client struct {
+	HealthEndpoint          goa.Endpoint
 	GetPackSizesEndpoint    goa.Endpoint
 	UpdatePackSizesEndpoint goa.Endpoint
 	CalculateEndpoint       goa.Endpoint
 }
 
 // NewClient initializes a "optimizer" service client given the endpoints.
-func NewClient(getPackSizes, updatePackSizes, calculate goa.Endpoint) *Client {
+func NewClient(health, getPackSizes, updatePackSizes, calculate goa.Endpoint) *Client {
 	return &Client{
+		HealthEndpoint:          health,
 		GetPackSizesEndpoint:    getPackSizes,
 		UpdatePackSizesEndpoint: updatePackSizes,
 		CalculateEndpoint:       calculate,
 	}
+}
+
+// Health calls the "health" endpoint of the "optimizer" service.
+// Health may return the following errors:
+//   - "internal_server_error" (type *goa.ServiceError)
+//   - error: internal error
+func (c *Client) Health(ctx context.Context) (res *HealthResult, err error) {
+	var ires any
+	ires, err = c.HealthEndpoint(ctx, nil)
+	if err != nil {
+		return
+	}
+	return ires.(*HealthResult), nil
 }
 
 // GetPackSizes calls the "getPackSizes" endpoint of the "optimizer" service.

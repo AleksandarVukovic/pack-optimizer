@@ -6,6 +6,28 @@ info:
 servers:
     - url: http://localhost:8080
 paths:
+    /health:
+        get:
+            tags:
+                - optimizer
+            summary: health optimizer
+            description: Returns the health status of the service.
+            operationId: optimizer#health
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HealthResponseBody'
+                            example:
+                                status: ok
+                "500":
+                    description: 'internal_server_error: Internal Server Error response.'
+                    content:
+                        application/vnd.goa.error:
+                            schema:
+                                $ref: '#/components/schemas/Error'
     /packs/calculate:
         get:
             tags:
@@ -35,12 +57,10 @@ paths:
                                 $ref: '#/components/schemas/CalculateResponseBody'
                             example:
                                 packs:
-                                    - quantity: 5462019687617304141
-                                      size: 9022841764491673247
-                                    - quantity: 5462019687617304141
-                                      size: 9022841764491673247
-                                    - quantity: 5462019687617304141
-                                      size: 9022841764491673247
+                                    - quantity: 1609558464246327244
+                                      size: 5614756764895872828
+                                    - quantity: 1609558464246327244
+                                      size: 5614756764895872828
                 "400":
                     description: 'bad_request: Bad Request response.'
                     content:
@@ -121,20 +141,24 @@ components:
                         $ref: '#/components/schemas/Pack'
                     description: Optimal pack combinations (pack size -> quantity)
                     example:
-                        - quantity: 5462019687617304141
-                          size: 9022841764491673247
-                        - quantity: 5462019687617304141
-                          size: 9022841764491673247
+                        - quantity: 1609558464246327244
+                          size: 5614756764895872828
+                        - quantity: 1609558464246327244
+                          size: 5614756764895872828
+                        - quantity: 1609558464246327244
+                          size: 5614756764895872828
+                        - quantity: 1609558464246327244
+                          size: 5614756764895872828
             example:
                 packs:
-                    - quantity: 5462019687617304141
-                      size: 9022841764491673247
-                    - quantity: 5462019687617304141
-                      size: 9022841764491673247
-                    - quantity: 5462019687617304141
-                      size: 9022841764491673247
-                    - quantity: 5462019687617304141
-                      size: 9022841764491673247
+                    - quantity: 1609558464246327244
+                      size: 5614756764895872828
+                    - quantity: 1609558464246327244
+                      size: 5614756764895872828
+                    - quantity: 1609558464246327244
+                      size: 5614756764895872828
+                    - quantity: 1609558464246327244
+                      size: 5614756764895872828
             required:
                 - packs
         Error:
@@ -163,14 +187,14 @@ components:
                 timeout:
                     type: boolean
                     description: Is the error a timeout?
-                    example: false
+                    example: true
             example:
                 fault: true
                 id: 123abc
                 message: parameter 'p' must be an integer
                 name: bad_request
-                temporary: true
-                timeout: true
+                temporary: false
+                timeout: false
             required:
                 - name
                 - id
@@ -185,7 +209,7 @@ components:
                     type: array
                     items:
                         type: integer
-                        example: 1252738748905056061
+                        example: 3314533960745271680
                         format: int64
                     description: Current pack sizes
                     example:
@@ -199,23 +223,34 @@ components:
                     - 1000
             required:
                 - sizes
+        HealthResponseBody:
+            type: object
+            properties:
+                status:
+                    type: string
+                    description: Health status of the service
+                    example: ok
+            example:
+                status: ok
+            required:
+                - status
         Pack:
             type: object
             properties:
                 quantity:
                     type: integer
                     description: Quantity of this pack size needed
-                    example: 5231780788838641072
+                    example: 5508737646480335232
                     format: int64
                 size:
                     type: integer
                     description: Size of the pack
-                    example: 1228837440079209148
+                    example: 2315902810084718852
                     format: int64
             description: Pack represents a pack size and the quantity needed.
             example:
-                quantity: 5378073684824219235
-                size: 2405996645203351898
+                quantity: 1983071130868209503
+                size: 7969886467026274248
             required:
                 - size
                 - quantity

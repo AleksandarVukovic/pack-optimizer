@@ -18,6 +18,9 @@ import (
 
 // Client lists the optimizer service endpoint HTTP clients.
 type Client struct {
+	// Health Doer is the HTTP client used to make requests to the health endpoint.
+	HealthDoer goahttp.Doer
+
 	// GetPackSizes Doer is the HTTP client used to make requests to the
 	// getPackSizes endpoint.
 	GetPackSizesDoer goahttp.Doer
@@ -50,6 +53,7 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
+		HealthDoer:          doer,
 		GetPackSizesDoer:    doer,
 		UpdatePackSizesDoer: doer,
 		CalculateDoer:       doer,
@@ -58,6 +62,25 @@ func NewClient(
 		host:                host,
 		decoder:             dec,
 		encoder:             enc,
+	}
+}
+
+// Health returns an endpoint that makes HTTP requests to the optimizer service
+// health server.
+func (c *Client) Health() goa.Endpoint {
+	var (
+		decodeResponse = DecodeHealthResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildHealthRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.HealthDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("optimizer", "health", err)
+		}
+		return decodeResponse(resp)
 	}
 }
 

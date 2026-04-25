@@ -20,6 +20,13 @@ type UpdatePackSizesRequestBody struct {
 	Sizes []int `form:"sizes" json:"sizes" xml:"sizes"`
 }
 
+// HealthResponseBody is the type of the "optimizer" service "health" endpoint
+// HTTP response body.
+type HealthResponseBody struct {
+	// Health status of the service
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
 // GetPackSizesResponseBody is the type of the "optimizer" service
 // "getPackSizes" endpoint HTTP response body.
 type GetPackSizesResponseBody struct {
@@ -32,6 +39,24 @@ type GetPackSizesResponseBody struct {
 type CalculateResponseBody struct {
 	// Optimal pack combinations (pack size -> quantity)
 	Packs []*PackResponseBody `form:"packs,omitempty" json:"packs,omitempty" xml:"packs,omitempty"`
+}
+
+// HealthInternalServerErrorResponseBody is the type of the "optimizer" service
+// "health" endpoint HTTP response body for the "internal_server_error" error.
+type HealthInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
 // GetPackSizesInternalServerErrorResponseBody is the type of the "optimizer"
@@ -150,6 +175,31 @@ func NewUpdatePackSizesRequestBody(p *optimizer.UpdatePackSizesPayload) *UpdateP
 	return body
 }
 
+// NewHealthResultOK builds a "optimizer" service "health" endpoint result from
+// a HTTP "OK" response.
+func NewHealthResultOK(body *HealthResponseBody) *optimizer.HealthResult {
+	v := &optimizer.HealthResult{
+		Status: *body.Status,
+	}
+
+	return v
+}
+
+// NewHealthInternalServerError builds a optimizer service health endpoint
+// internal_server_error error.
+func NewHealthInternalServerError(body *HealthInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // NewGetPackSizesResultOK builds a "optimizer" service "getPackSizes" endpoint
 // result from a HTTP "OK" response.
 func NewGetPackSizesResultOK(body *GetPackSizesResponseBody) *optimizer.GetPackSizesResult {
@@ -253,6 +303,14 @@ func NewCalculateInternalServerError(body *CalculateInternalServerErrorResponseB
 	return v
 }
 
+// ValidateHealthResponseBody runs the validations defined on HealthResponseBody
+func ValidateHealthResponseBody(body *HealthResponseBody) (err error) {
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	return
+}
+
 // ValidateGetPackSizesResponseBody runs the validations defined on
 // GetPackSizesResponseBody
 func ValidateGetPackSizesResponseBody(body *GetPackSizesResponseBody) (err error) {
@@ -274,6 +332,30 @@ func ValidateCalculateResponseBody(body *CalculateResponseBody) (err error) {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
+	}
+	return
+}
+
+// ValidateHealthInternalServerErrorResponseBody runs the validations defined
+// on health_internal_server_error_response_body
+func ValidateHealthInternalServerErrorResponseBody(body *HealthInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
 	}
 	return
 }

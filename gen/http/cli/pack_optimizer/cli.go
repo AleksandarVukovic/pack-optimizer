@@ -24,13 +24,13 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"optimizer (get-pack-sizes|update-pack-sizes|calculate)",
+		"optimizer (health|get-pack-sizes|update-pack-sizes|calculate)",
 	}
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + " " + "optimizer get-pack-sizes" + "\n" +
+	return os.Args[0] + " " + "optimizer health" + "\n" +
 		""
 }
 
@@ -46,6 +46,8 @@ func ParseEndpoint(
 	var (
 		optimizerFlags = flag.NewFlagSet("optimizer", flag.ContinueOnError)
 
+		optimizerHealthFlags = flag.NewFlagSet("health", flag.ExitOnError)
+
 		optimizerGetPackSizesFlags = flag.NewFlagSet("get-pack-sizes", flag.ExitOnError)
 
 		optimizerUpdatePackSizesFlags    = flag.NewFlagSet("update-pack-sizes", flag.ExitOnError)
@@ -55,6 +57,7 @@ func ParseEndpoint(
 		optimizerCalculateQuantityFlag = optimizerCalculateFlags.String("quantity", "REQUIRED", "")
 	)
 	optimizerFlags.Usage = optimizerUsage
+	optimizerHealthFlags.Usage = optimizerHealthUsage
 	optimizerGetPackSizesFlags.Usage = optimizerGetPackSizesUsage
 	optimizerUpdatePackSizesFlags.Usage = optimizerUpdatePackSizesUsage
 	optimizerCalculateFlags.Usage = optimizerCalculateUsage
@@ -93,6 +96,9 @@ func ParseEndpoint(
 		switch svcn {
 		case "optimizer":
 			switch epn {
+			case "health":
+				epf = optimizerHealthFlags
+
 			case "get-pack-sizes":
 				epf = optimizerGetPackSizesFlags
 
@@ -127,6 +133,8 @@ func ParseEndpoint(
 		case "optimizer":
 			c := optimizerc.NewClient(scheme, host, doer, enc, dec, restore)
 			switch epn {
+			case "health":
+				endpoint = c.Health()
 			case "get-pack-sizes":
 				endpoint = c.GetPackSizes()
 			case "update-pack-sizes":
@@ -151,6 +159,7 @@ func optimizerUsage() {
 	fmt.Fprintln(os.Stderr, `Service calculates optimal pack combinations for a given number of items.`)
 	fmt.Fprintf(os.Stderr, "Usage:\n    %s [globalflags] optimizer COMMAND [flags]\n\n", os.Args[0])
 	fmt.Fprintln(os.Stderr, "COMMAND:")
+	fmt.Fprintln(os.Stderr, `    health: Returns the health status of the service.`)
 	fmt.Fprintln(os.Stderr, `    get-pack-sizes: Get the current pack sizes.`)
 	fmt.Fprintln(os.Stderr, `    update-pack-sizes: Update the pack sizes.`)
 	fmt.Fprintln(os.Stderr, `    calculate: Calculate optimal pack combinations for a given number of items.`)
@@ -158,6 +167,22 @@ func optimizerUsage() {
 	fmt.Fprintln(os.Stderr, "Additional help:")
 	fmt.Fprintf(os.Stderr, "    %s optimizer COMMAND --help\n", os.Args[0])
 }
+func optimizerHealthUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] optimizer health", os.Args[0])
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Returns the health status of the service.`)
+
+	// Flags list
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "optimizer health")
+}
+
 func optimizerGetPackSizesUsage() {
 	// Header with flags
 	fmt.Fprintf(os.Stderr, "%s [flags] optimizer get-pack-sizes", os.Args[0])

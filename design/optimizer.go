@@ -15,6 +15,25 @@ var _ = API("pack-optimizer", func() {
 var _ = Service("optimizer", func() {
 	Description("Service calculates optimal pack combinations for a given number of items.")
 
+	Method("health", func() {
+		Description("Returns the health status of the service.")
+
+		Result(func() {
+			Field(1, "status", String, "Health status of the service", func() {
+				Example("ok")
+			})
+			Required("status")
+		})
+
+		Error("internal_server_error", ErrorResult)
+
+		HTTP(func() {
+			GET("/health")
+			Response(StatusOK)
+			Response("internal_server_error", StatusInternalServerError)
+		})
+	})
+
 	Method("getPackSizes", func() {
 		Description("Get the current pack sizes.")
 		Result(func() {

@@ -22,6 +22,12 @@ func NewOptimizerSvc(p pack.PackSvc, c calculator.Calculator) goaoptimizer.Servi
 	}
 }
 
+func (s *optimizersrvc) Health(context.Context) (res *goaoptimizer.HealthResult, err error) {
+	return &goaoptimizer.HealthResult{
+		Status: "ok",
+	}, nil
+}
+
 func (s *optimizersrvc) GetPackSizes(ctx context.Context) (res *goaoptimizer.GetPackSizesResult, err error) {
 	log := logger.FromCtx(ctx)
 	log.Info("optimizer.getSizes")

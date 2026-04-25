@@ -8,6 +8,11 @@
 
 package server
 
+// HealthOptimizerPath returns the URL path to the optimizer service health HTTP endpoint.
+func HealthOptimizerPath() string {
+	return "/health"
+}
+
 // GetPackSizesOptimizerPath returns the URL path to the optimizer service getPackSizes HTTP endpoint.
 func GetPackSizesOptimizerPath() string {
 	return "/packs/sizes"

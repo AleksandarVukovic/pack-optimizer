@@ -22,7 +22,8 @@ gotest:
 	go test -v -race -timeout=30s $$files
 
 integration-test:
-	API_URL=$(API_URL) go test -v ./test/integration/...
+	@chmod +x scripts/run-integration-tests.sh
+	@BINARY=$(BINARY) API_URL=$(API_URL) scripts/run-integration-tests.sh
 
 fmt:
 	go fmt ./...

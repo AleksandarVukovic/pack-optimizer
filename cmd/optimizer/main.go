@@ -60,17 +60,12 @@ func main() {
 	))
 
 	server.Mount(mux, optimizerSrv)
-
-	// temporary solution just to show index page
-	mux.Handle("GET", "/", func(w http.ResponseWriter, r *http.Request) {
-		// docker build will ensure that index.html is in same place as binary
-		filePath := filepath.Join("index.html")
-		http.ServeFile(w, r, filePath)
-	})
-
 	for _, m := range optimizerSrv.Mounts {
 		log.Debug("expose API", "verb", m.Verb, "path", m.Pattern, "method", m.Method)
 	}
+
+	// temporary solution just to show index page and docs
+	mountDocsEndpoints(ctx, mux)
 
 	addr := ":" + strconv.Itoa(port)
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: time.Second * 60}
@@ -110,6 +105,29 @@ func main() {
 	// trigger shutdown goroutine process
 	cancel()
 	wg.Wait()
+}
+
+// mount few APIs about docs and index page
+func mountDocsEndpoints(ctx context.Context, mux goahttp.ResolverMuxer) {
+	// docker build will ensure that needed files are shipped together with binary
+	log := logger.FromCtx(ctx)
+	mux.Handle("GET", "/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		http.ServeFile(w, r, filepath.Join("index.html"))
+	})
+	log.Debug("expose API", "verb", "GET", "path", "/")
+
+	mux.Handle("GET", "/openapi.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		http.ServeFile(w, r, filepath.Join("openapi3.json"))
+	})
+	log.Debug("expose API", "verb", "GET", "path", "/openapi.json")
+
+	mux.Handle("GET", "/docs", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		http.ServeFile(w, r, filepath.Join("swagger.html"))
+	})
+	log.Debug("expose API", "verb", "GET", "path", "/docs")
 }
 
 func loadFlagsFromEnv() {

@@ -165,11 +165,13 @@ This runs `goa gen` and overwrites everything under `gen/`. Never edit files in 
 
 ## Testing
 
+### Unit tests
+
 Tests live alongside the code they test. The CI pipeline enforces **≥ 70% coverage** — the build fails otherwise.
 
 ```bash
-make test       # run all tests
-make coverage   # run tests + open coverage.html
+make test       # run all unit tests
+make coverage   # run tests + generate coverage.html
 ```
 
 | Package | Coverage focus |
@@ -177,6 +179,25 @@ make coverage   # run tests + open coverage.html
 | `internal/calculator` | Correctness of the optimisation algorithm across a wide range of inputs, including large numbers and non-standard pack sizes |
 | `internal/pack` | Validation, sorting, defensive copying, concurrent access |
 | `internal/logger` | Context injection, request middleware, panic behaviour without logger |
+| `internal/api` | API layer mapping, error handling, delegation to pack and calculator services |
+
+### Integration tests
+
+Integration tests live in `test/integration/` and run against a **real running binary**. They test the full HTTP stack end-to-end using [Ginkgo](https://onsi.github.io/ginkgo/) and [Gomega](https://onsi.github.io/gomega/).
+
+```bash
+# 1. start the server
+make build
+./bin/pack-optimizer
+
+# 2. in another terminal, run the integration tests
+make integration-test
+
+# or point at a different environment
+API_URL=https://pack-optimizer-go-3f0f2ae79338.herokuapp.com make integration-test
+```
+
+The `API_URL` environment variable defaults to `http://localhost:8080` if not set. Each test resets pack sizes to the defaults in `BeforeEach` to ensure full isolation between test cases.
 
 ---
 

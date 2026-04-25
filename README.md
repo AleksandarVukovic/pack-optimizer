@@ -59,7 +59,7 @@ The API is documented via **Swagger UI**, auto-generated from the Goa design in 
 | Local | http://localhost:8080/docs |
 | Production | https://pack-optimizer-go-3f0f2ae79338.herokuapp.com/docs |
 
-The raw OpenAPI 3.0 spec is also available at `/openapi.json` if you need to import it into Postman, Insomnia, or any other tool.
+The raw OpenAPI 3.0 spec is also available at `/openapi.json`.
 
 **Note:** Documentation APIs works only when the application is started using Docker.
 
@@ -185,19 +185,22 @@ make coverage   # run tests + generate coverage.html
 
 Integration tests live in `test/integration/` and run against a **real running binary**. They test the full HTTP stack end-to-end using [Ginkgo](https://onsi.github.io/ginkgo/) and [Gomega](https://onsi.github.io/gomega/).
 
-```bash
-# 1. start the server
-make build
-./bin/pack-optimizer
+The full lifecycle (start server → wait for readiness → run tests → stop server) is managed by `scripts/integration-test.sh`, which is used both locally and in CI.
 
-# 2. in another terminal, run the integration tests
+```bash
+# 1. build the server
+make build
+# 2. run integration tests in one command
 make integration-test
 
-# or point at a different environment
+# point at a different environment (skips starting the binary)
 API_URL=https://pack-optimizer-go-3f0f2ae79338.herokuapp.com make integration-test
+
+# override the binary path or retry behaviour
+BINARY=./bin/pack-optimizer MAX_RETRIES=5 RETRY_INTERVAL=3 make integration-test
 ```
 
-The `API_URL` environment variable defaults to `http://localhost:8080` if not set. Each test resets pack sizes to the defaults in `BeforeEach` to ensure full isolation between test cases.
+Each test resets pack sizes to defaults in `BeforeEach` to ensure full isolation between test cases.
 
 ---
 

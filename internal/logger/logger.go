@@ -26,7 +26,7 @@ func NewLogger(debug bool) *slog.Logger {
 }
 
 func WithCtx(ctx context.Context, log *slog.Logger) context.Context {
-	return context.WithValue(context.Background(), loggerKey, log)
+	return context.WithValue(ctx, loggerKey, log)
 }
 
 func FromCtx(ctx context.Context) *slog.Logger {

@@ -35,7 +35,7 @@ func TestGetPackSizes(t *testing.T) {
 			psvc := &mockPackSvc{}
 			psvc.On("GetSizes").Return(tt.sizes)
 
-			svc := NewOptimizerSvc(psvc, &mockCalculator{})
+			svc := NewOptimizerSvc(psvc, &mockCalculator{}, newMockMeter())
 			res, err := svc.GetPackSizes(newCtx(t))
 
 			require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestUpdatePackSizes(t *testing.T) {
 			psvc := &mockPackSvc{}
 			psvc.On("UpdateSizes", tt.sizes).Return(tt.updateErr)
 
-			svc := NewOptimizerSvc(psvc, &mockCalculator{})
+			svc := NewOptimizerSvc(psvc, &mockCalculator{}, newMockMeter())
 			err := svc.UpdatePackSizes(newCtx(t), &goaoptimizer.UpdatePackSizesPayload{
 				Sizes: tt.sizes,
 			})
@@ -132,7 +132,7 @@ func TestCalculate(t *testing.T) {
 			calc := &mockCalculator{}
 			calc.On("CalculateOptimalPacks", ctx, tt.quantity).Return(tt.calcResult)
 
-			svc := NewOptimizerSvc(&mockPackSvc{}, calc)
+			svc := NewOptimizerSvc(&mockPackSvc{}, calc, newMockMeter())
 			res, err := svc.Calculate(ctx, &goaoptimizer.CalculatePayload{Quantity: tt.quantity})
 
 			require.NoError(t, err)
@@ -174,4 +174,18 @@ type mockCalculator struct {
 func (m *mockCalculator) CalculateOptimalPacks(ctx context.Context, totalItems int) []pack.Pack {
 	args := m.Called(ctx, totalItems)
 	return args.Get(0).([]pack.Pack)
+}
+
+type mockMeter struct {
+	mock.Mock
+}
+
+func (m *mockMeter) Increment(ctx context.Context, name string) {
+	m.Called(ctx, name)
+}
+
+func newMockMeter() *mockMeter {
+	m := &mockMeter{}
+	m.On("Increment", mock.Anything, mock.Anything).Return()
+	return m
 }

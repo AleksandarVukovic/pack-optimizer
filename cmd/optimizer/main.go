@@ -21,37 +21,40 @@ import (
 	"github.com/aleksandarv/pack-optimizer/internal/calculator"
 	"github.com/aleksandarv/pack-optimizer/internal/logger"
 	"github.com/aleksandarv/pack-optimizer/internal/pack"
+	"github.com/aleksandarv/pack-optimizer/internal/telemetry"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/goa/v3/http/middleware"
 )
 
 func main() {
 	var (
-		debug bool
-		port  int
+		debug           bool
+		port            int
+		metricsInterval int
+		otelEndpoint    string
 	)
 	flag.BoolVar(&debug, "debug", false, "Enable debug mode with verbose logging")
 	flag.IntVar(&port, "port", 8080, "HTTP port")
+	flag.IntVar(&metricsInterval, "metrics-interval", 60, "Interval in seconds for exporting metrics")
+	flag.StringVar(&otelEndpoint, "otel-endpoint", "localhost:4318", "OTel collector endpoint")
 	loadFlagsFromEnv()
 	flag.Parse()
 
 	log := logger.NewLogger(debug)
+	ctx := logger.WithCtx(context.Background(), log)
 
-	var (
-		ctx context.Context
-	)
-	{
-		ctx = logger.WithCtx(context.Background(), log)
-	}
-
+	meter := telemetry.NewMeter(telemetry.APIComponentName)
 	psvc := pack.NewInMemorySvc(pack.DefaultSizes)
 	calculator := calculator.NewCalculator(psvc)
-	optimizerSvc := api.NewOptimizerSvc(psvc, calculator)
+	optimizerSvc := api.NewOptimizerSvc(psvc, calculator, meter)
 	endpoints := goaoptimizer.NewEndpoints(optimizerSvc)
 
 	mux := goahttp.NewMuxer()
 	optimizerSrv := server.New(endpoints, mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, errorHandler(log), nil)
 
+	optimizerSrv.Use(telemetry.RequestIdMiddleware())
+	optimizerSrv.Use(otelhttp.NewMiddleware(telemetry.APIComponentName))
 	optimizerSrv.Use(logger.RequestMiddleware(log))
 	optimizerSrv.Use(middleware.PopulateRequestContext())
 	optimizerSrv.Use(middleware.RequestID(
@@ -66,6 +69,12 @@ func main() {
 
 	// temporary solution just to show index page and docs
 	mountDocsEndpoints(ctx, mux)
+
+	shutdownTracing, shutdownMetrics, err := telemetry.InitObservability(ctx, otelEndpoint, metricsInterval)
+	if err != nil {
+		log.Error(err.Error())
+		os.Exit(1)
+	}
 
 	addr := ":" + strconv.Itoa(port)
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: time.Second * 60}
@@ -96,10 +105,16 @@ func main() {
 		if err := srv.Shutdown(ctx); err != nil {
 			log.Error("error while shutting down", "error", err)
 		}
+		if err := shutdownTracing(ctx); err != nil {
+			log.Error("error while shutting down tracer provider", "error", err)
+		}
+		if err := shutdownMetrics(ctx); err != nil {
+			log.Error("error while shutting down meter provider", "error", err)
+		}
 	})
 
 	// waiting on some signal to shutdown the server
-	err := <-errc
+	err = <-errc
 	log.Info("exiting server", "reason", err)
 
 	// trigger shutdown goroutine process
@@ -132,8 +147,10 @@ func mountDocsEndpoints(ctx context.Context, mux goahttp.ResolverMuxer) {
 
 func loadFlagsFromEnv() {
 	envToFlag := map[string]string{
-		"DEBUG": "debug",
-		"PORT":  "port",
+		"DEBUG":            "debug",
+		"PORT":             "port",
+		"METRICS_INTERVAL": "metrics-interval",
+		"OTEL_ENDPOINT":    "otel-endpoint",
 	}
 	for env, flagName := range envToFlag {
 		if val := os.Getenv(env); val != "" {

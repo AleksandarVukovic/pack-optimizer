@@ -1,0 +1,41 @@
+replicaCount: 2
+
+image:
+  repository: vukovic96/pack-optimizer
+  tag: latest
+  pullPolicy: IfNotPresent
+
+config:
+  port: 8080
+  debug: false
+  otelEndpoint: "otel-collector:4318"
+  metricsInterval: 60
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: pack-optimizer.local
+  path: /
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+probes:
+  path: /health
+  initialDelaySeconds: 5
+  periodSeconds: 10

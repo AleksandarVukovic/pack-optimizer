@@ -11,6 +11,7 @@ A design-first HTTP API written in Go that calculates the optimal combination of
 - **Go 1.26** with [Goa v3](https://goa.design/) (design-first, code-generated transport layer)
 - **OpenTelemetry** — request tracing and metrics, exported via OTLP/HTTP
 - **Docker** — multi-stage build, image published to Docker Hub (`vukovic96/pack-optimizer`)
+- **Kubernetes / Helm** — chart for deploying the service to a cluster (`infra/k8s/helm/`)
 - **GitHub Actions** — CI/CD pipeline with build, test, coverage gate, and Docker push
 - **Heroku** — live deployment
 
@@ -49,6 +50,17 @@ pack-optimizer/
 ├── web/
 │   └── static/
 │       └── index.html           # Vanilla JS frontend
+├── infra/
+│   ├── terraform/                # Cloud infrastructure (WIP)
+│   └── k8s/
+│       └── helm/                 # Helm chart for deploying to Kubernetes
+│           ├── Chart.yaml
+│           ├── values.yaml       # Default config (image, resources, ingress, autoscaling)
+│           └── templates/
+│               ├── deployment.yaml
+│               ├── service.yaml
+│               ├── ingress.yaml
+│               └── hpa.yaml
 ├── Dockerfile                   # Multi-stage build (builder → alpine)
 ├── Makefile                     # Targets: build, test, coverage, generate, docker, push
 ├── go.mod
@@ -145,6 +157,34 @@ Then open `http://localhost:8080` in your browser.
 ```bash
 docker build -t pack-optimizer .
 docker run -p 8080:8080 pack-optimizer
+```
+
+### Run on Kubernetes
+
+A Helm chart is available at `infra/k8s/helm/` for deploying the service to a cluster.
+
+```bash
+helm install pack-optimizer infra/k8s/helm
+```
+
+By default this deploys behind a `ClusterIP` Service, with an `Ingress` (assumes an `nginx` ingress controller) and a `HorizontalPodAutoscaler` that scales the pod count between `minReplicas` and `maxReplicas` based on CPU. All of it is configurable via `values.yaml` — see the table below for the main knobs, or override with `-f <file>.yaml` / `--set key=value`.
+
+| Value | Default | Description |
+|-------|---------|-------------|
+| `image.repository` / `image.tag` | `vukovic96/pack-optimizer` / `latest` | Container image to deploy |
+| `replicaCount` | `1` | Initial replica count (overridden by autoscaling once active) |
+| `config.port`, `config.debug`, `config.otelEndpoint`, `config.metricsInterval` | see [Environment Variables](#environment-variables) | Passed to the container as env vars |
+| `service.type` / `service.port` | `ClusterIP` / `80` | In-cluster Service |
+| `ingress.enabled` / `ingress.className` / `ingress.host` | `true` / `nginx` / `pack-optimizer.local` | Ingress routing |
+| `resources.requests` / `resources.limits` | `100m/64Mi` / `500m/256Mi` | Pod CPU/memory |
+| `autoscaling.enabled` / `minReplicas` / `maxReplicas` / `targetCPUUtilizationPercentage` | `true` / `1` / `3` / `70` | HPA behaviour |
+
+**Testing locally with minikube:**
+
+```bash
+minikube addons enable ingress
+helm install pack-optimizer infra/k8s/helm
+curl --resolve pack-optimizer.local:80:$(minikube ip) http://pack-optimizer.local/health
 ```
 
 ### Environment Variables

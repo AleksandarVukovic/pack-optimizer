@@ -9,6 +9,7 @@ A design-first HTTP API written in Go that calculates the optimal combination of
 ## Tech Stack
 
 - **Go 1.26** with [Goa v3](https://goa.design/) (design-first, code-generated transport layer)
+- **OpenTelemetry** — request tracing and metrics, exported via OTLP/HTTP
 - **Docker** — multi-stage build, image published to Docker Hub (`vukovic96/pack-optimizer`)
 - **GitHub Actions** — CI/CD pipeline with build, test, coverage gate, and Docker push
 - **Heroku** — live deployment
@@ -35,10 +36,16 @@ pack-optimizer/
 │   ├── logger/
 │   │   ├── logger.go            # slog-based logger, request middleware, context helpers
 │   │   └── logger_test.go       # Unit tests
-│   └── pack/
-│       ├── types.go             # Domain types: Pack, PackSvc interface, ValidationError
-│       ├── memorypack.go        # Thread-safe in-memory PackSvc implementation
-│       └── memorypack_test.go   # Unit tests
+│   ├── pack/
+│   │   ├── types.go             # Domain types: Pack, PackSvc interface, ValidationError
+│   │   ├── memorypack.go        # Thread-safe in-memory PackSvc implementation
+│   │   └── memorypack_test.go   # Unit tests
+│   └── telemetry/
+│       ├── telemetry.go         # Sets up OTel tracer/meter providers, OTLP/HTTP exporters
+│       ├── trace.go             # Tracer implementation (span creation, error recording)
+│       ├── meter.go             # Meter implementation (counters)
+│       ├── middleware.go        # Attaches request ID to the active span
+│       └── types.go             # Tracer/Meter interfaces, metric names, service constants
 ├── web/
 │   └── static/
 │       └── index.html           # Vanilla JS frontend
@@ -71,6 +78,21 @@ curl http://localhost:8080/health
 ```
 
 Returns `200 OK` when the service is up.
+
+---
+
+## Observability
+
+The service is instrumented with [OpenTelemetry](https://opentelemetry.io/), exporting both traces and metrics over OTLP/HTTP (`internal/telemetry/`).
+
+- **Tracing** — every request is wrapped in a span via `otelhttp` middleware; the Goa-generated request ID is attached as a span attribute (`internal/telemetry/middleware.go`). Service-level calls (calculate, update pack sizes) are traced explicitly through the `Tracer` interface.
+- **Metrics** — counters for key operations are pushed on a periodic interval via the `Meter` interface:
+  - `optimizer.calculate.count`
+  - `optimizer.update_pack_sizes.count`
+  - `optimizer.update_pack_sizes.failed.count`
+- **Shutdown** — both the tracer and meter providers are flushed gracefully on server shutdown, within the same 30s shutdown window as the HTTP server.
+
+Configure the OTLP collector endpoint and metric export interval via flags or environment variables (see [Environment Variables](#environment-variables)).
 
 ---
 
@@ -115,7 +137,7 @@ Then open `http://localhost:8080` in your browser.
 **Flags:**
 
 ```bash
-./bin/pack-optimizer --port=9090 --debug=true
+./bin/pack-optimizer --port=9090 --debug=true --otel-endpoint=localhost:4318 --metrics-interval=60
 ```
 
 ### Run with Docker
@@ -131,6 +153,8 @@ docker run -p 8080:8080 pack-optimizer
 |----------|---------|-------------|
 | `PORT`   | `8080`  | HTTP listen port |
 | `DEBUG`  | `false` | Enables verbose debug logging |
+| `OTEL_ENDPOINT` | `localhost:4318` | OTLP/HTTP collector endpoint for traces and metrics |
+| `METRICS_INTERVAL` | `60` | Interval in seconds for exporting metrics |
 
 Both flags and environment variables are supported — env vars are mapped to flags automatically in `loadFlagsFromEnv()`.
 
@@ -179,7 +203,7 @@ make coverage   # run tests + generate coverage.html
 | `internal/calculator` | Correctness of the optimisation algorithm across a wide range of inputs, including large numbers and non-standard pack sizes |
 | `internal/pack` | Validation, sorting, defensive copying, concurrent access |
 | `internal/logger` | Context injection, request middleware, panic behaviour without logger |
-| `internal/api` | API layer mapping, error handling, delegation to pack and calculator services |
+| `internal/api` | API layer mapping, error handling, delegation to pack, calculator, and telemetry |
 
 ### Integration tests
 

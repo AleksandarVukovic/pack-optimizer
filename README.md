@@ -11,7 +11,7 @@ A design-first HTTP API written in Go that calculates the optimal combination of
 - **Go 1.26** with [Goa v3](https://goa.design/) (design-first, code-generated transport layer)
 - **OpenTelemetry** — request tracing and metrics, exported via OTLP/HTTP
 - **Docker** — multi-stage build, image published to Docker Hub (`vukovic96/pack-optimizer`)
-- **Docker Compose** — `docker-compose.yml` runs the `app` service; designed to be extended with additional services (e.g. a database) on other branches
+- **Docker Compose** — `docker-compose.yml` runs `app`, `postgres`, and a one-off `migrate` service for local development (see [Environment Variables](#environment-variables) and [Run with Docker Compose](#run-with-docker-compose))
 - **Kubernetes / Helm** — chart for deploying the service to a cluster (`infra/k8s/helm/`)
 - **GitHub Actions** — CI/CD pipeline with build, test, coverage gate, and Docker push
 - **Heroku** — live deployment
@@ -74,7 +74,7 @@ pack-optimizer/
 │               ├── ingress.yaml
 │               └── hpa.yaml
 ├── Dockerfile                   # Multi-stage build (builder → alpine)
-├── docker-compose.yml           # Runs the app service; extend with other services (e.g. DB) on other branches
+├── docker-compose.yml           # Runs app + postgres + migrate for local development
 ├── Makefile                     # Targets: build, test, coverage, generate, docker, push
 ├── go.mod
 └── go.sum
@@ -184,7 +184,9 @@ docker run -p 8080:8080 pack-optimizer
 docker compose up -d
 ```
 
-Starts the `app` service (built from the local `Dockerfile`) on port `8080`. This base configuration is intended to be extended with additional services (e.g. a database) via override files or on other branches.
+Starts `postgres`, runs `migrate` (applies `db/migrations` via [Goose](https://github.com/pressly/goose)) and then starts the `app` service (built from the local `Dockerfile`) on port `8080` — `app` waits on `migrate` completing successfully before starting.
+
+**Docker Compose here is for local development only.** In staging/production the database already exists with migrations applied ahead of time (e.g. as part of the deployment pipeline) — the app is never responsible for running migrations itself.
 
 ### Run on Kubernetes
 
@@ -222,6 +224,10 @@ curl --resolve pack-optimizer.local:80:$(minikube ip) http://pack-optimizer.loca
 | `DEBUG`  | `false` | Enables verbose debug logging |
 | `OTEL_ENDPOINT` | `localhost:4318` | OTLP/HTTP collector endpoint for traces and metrics |
 | `METRICS_INTERVAL` | `60` | Interval in seconds for exporting metrics |
+| `DB_HOST` | `localhost` | PostgreSQL host |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_USER` | `postgres` | PostgreSQL user |
+| `DB_PASSWORD` | `postgres` | PostgreSQL password |
 
 Both flags and environment variables are supported — env vars are mapped to flags automatically in `loadFlagsFromEnv()`.
 

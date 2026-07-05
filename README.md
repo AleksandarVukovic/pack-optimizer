@@ -21,6 +21,7 @@ A design-first HTTP API written in Go that calculates the optimal combination of
 
 ```
 pack-optimizer/
+├── adrs/                        # Architecture Decision Records
 ├── cmd/
 │   └── optimizer/
 │       └── main.go              # Entrypoint — wires dependencies, starts HTTP server
@@ -66,6 +67,12 @@ pack-optimizer/
 ├── go.mod
 └── go.sum
 ```
+
+---
+
+## Architecture Decision Records
+
+Significant architectural decisions (and the reasoning behind them) are recorded in [`adrs/`](adrs/README.md), following a lightweight Status / Context / Decision / Consequences format.
 
 ---
 

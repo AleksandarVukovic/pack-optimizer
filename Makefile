@@ -10,6 +10,8 @@ DESIGN_OUTPUT?=$(PROJECT_ROOT)
 
 API_URL?=http://localhost:8080
 
+GOOSE_VERSION=v3.27.2
+
 all: test coverage build
 
 build:
@@ -60,3 +62,18 @@ docker-build:
 
 push: docker-build
 	docker push $(DOCKER_REPO):$(DOCKER_IMAGE_TAG)
+
+goose-install:
+	go install github.com/pressly/goose/v3/cmd/goose@$(GOOSE_VERSION)
+
+migrate-status: goose-install
+	goose status
+
+migrate-up: goose-install
+	goose up
+
+migrate-down: goose-install
+	goose down
+
+migrate-create: goose-install
+	goose create $(NAME) sql

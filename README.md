@@ -11,6 +11,7 @@ A design-first HTTP API written in Go that calculates the optimal combination of
 - **Go 1.26** with [Goa v3](https://goa.design/) (design-first, code-generated transport layer)
 - **OpenTelemetry** — request tracing and metrics, exported via OTLP/HTTP
 - **Docker** — multi-stage build, image published to Docker Hub (`vukovic96/pack-optimizer`)
+- **Docker Compose** — `docker-compose.yml` runs the `app` service; designed to be extended with additional services (e.g. a database) on other branches
 - **Kubernetes / Helm** — chart for deploying the service to a cluster (`infra/k8s/helm/`)
 - **GitHub Actions** — CI/CD pipeline with build, test, coverage gate, and Docker push
 - **Heroku** — live deployment
@@ -63,6 +64,7 @@ pack-optimizer/
 │               ├── ingress.yaml
 │               └── hpa.yaml
 ├── Dockerfile                   # Multi-stage build (builder → alpine)
+├── docker-compose.yml           # Runs the app service; extend with other services (e.g. DB) on other branches
 ├── Makefile                     # Targets: build, test, coverage, generate, docker, push
 ├── go.mod
 └── go.sum
@@ -165,6 +167,14 @@ Then open `http://localhost:8080` in your browser.
 docker build -t pack-optimizer .
 docker run -p 8080:8080 pack-optimizer
 ```
+
+### Run with Docker Compose
+
+```bash
+docker compose up -d
+```
+
+Starts the `app` service (built from the local `Dockerfile`) on port `8080`. This base configuration is intended to be extended with additional services (e.g. a database) via override files or on other branches.
 
 ### Run on Kubernetes
 

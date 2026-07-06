@@ -11,6 +11,7 @@ DESIGN_OUTPUT?=$(PROJECT_ROOT)
 API_URL?=http://localhost:8080
 
 GOOSE_VERSION=v3.27.2
+SQLC_VERSION=v1.31.1
 
 all: test coverage build
 
@@ -20,7 +21,7 @@ build:
 test: goenv fmt vet gotest
 
 gotest:
-	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd | grep -v /test); \
+	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd | grep -v /repo | grep -v /test); \
 	go test -v -race -timeout=30s $$files
 
 integration-test:
@@ -37,7 +38,7 @@ goenv:
 	@go version
 
 coverage:
-	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd | grep -v /test); \
+	@files=$$(go list ./... | grep -v /gen | grep -v /design | grep -v /cmd | grep -v /repo | grep -v /test); \
 	go test -coverprofile=coverage.out $$files; \
 	go tool cover -html=coverage.out -o coverage.html
 	@total=$$(go tool cover -func=coverage.out | grep total: | awk '{print $$3}'); \
@@ -77,3 +78,9 @@ migrate-down: goose-install
 
 migrate-create: goose-install
 	goose create $(NAME) sql
+
+sqlc-install:
+	go install github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION)
+
+sqlc-generate: sqlc-install
+	cd db && sqlc generate

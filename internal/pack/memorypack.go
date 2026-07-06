@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+const maxPackSize = 10000
+
 type InMemomorySvc struct {
 	sync.Mutex
 	sizes []int
@@ -42,6 +44,9 @@ func validate(sizes []int) error {
 	for _, size := range sizes {
 		if size <= 0 {
 			return &ValidationError{"size must be positive integer"}
+		}
+		if size > maxPackSize {
+			return &ValidationError{"size must not exceed 10000"}
 		}
 	}
 	return nil

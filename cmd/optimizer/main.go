@@ -65,7 +65,7 @@ func main() {
 	}
 	log.Info("connected to postgres")
 
-	psvc := pack.NewPersistentSvc(dbpool)
+	psvc := pack.NewPersistentSvc(dbpool, telemetry.NewTracer(telemetry.PackComponentName))
 	calculator := calculator.NewCalculator(psvc)
 	meter := telemetry.NewMeter(telemetry.APIComponentName)
 	optimizerSvc := api.NewOptimizerSvc(psvc, calculator, meter)

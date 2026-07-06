@@ -3,8 +3,9 @@ package telemetry
 import "context"
 
 const (
-	ServiceName      = "pack-optimizer"
-	APIComponentName = "pack-optimizer/api"
+	ServiceName       = "pack-optimizer"
+	APIComponentName  = "pack-optimizer/api"
+	PackComponentName = "pack-optimizer/pack"
 
 	CalculateCountMetric             = "optimizer.calculate.count"
 	UpdatePackSizesCountMetric       = "optimizer.update_pack_sizes.count"

@@ -1,3 +1,5 @@
+> **About this branch:** `feature/postgres_pack_store` swaps the in-memory `PackSvc` for a **PostgreSQL-backed** implementation (`internal/pack/persistentpack.go`, generated via `sqlc`, schema managed with `Goose` migrations). It's one of several storage/framework variants branched off `main`, which itself stays storage-agnostic (in-memory `PackSvc` only). Don't merge storage-specific branches into each other — each targets `main` independently.
+
 # Pack Optimizer
 
 A design-first HTTP API written in Go that calculates the optimal combination of packs needed to fulfil an order. Pack sizes are configurable at runtime via the API — no restarts or code changes required.
@@ -9,6 +11,7 @@ A design-first HTTP API written in Go that calculates the optimal combination of
 ## Tech Stack
 
 - **Go 1.26** with [Goa v3](https://goa.design/) (design-first, code-generated transport layer)
+- **PostgreSQL** with [pgx](https://github.com/jackc/pgx) and [sqlc](https://sqlc.dev/) (generated, type-safe queries in `internal/repo/pack`) and [Goose](https://github.com/pressly/goose) migrations (`db/migrations`)
 - **OpenTelemetry** — request tracing and metrics, exported via OTLP/HTTP
 - **Docker** — multi-stage build, image published to Docker Hub (`vukovic96/pack-optimizer`)
 - **Docker Compose** — `docker-compose.yml` runs `app`, `postgres`, and a one-off `migrate` service for local development (see [Environment Variables](#environment-variables) and [Run with Docker Compose](#run-with-docker-compose))
@@ -52,13 +55,18 @@ pack-optimizer/
 │   ├── pack/
 │   │   ├── types.go             # Domain types: Pack, PackSvc interface, ValidationError
 │   │   ├── memorypack.go        # Thread-safe in-memory PackSvc implementation
-│   │   └── memorypack_test.go   # Unit tests
+│   │   ├── memorypack_test.go   # Unit tests
+│   │   └── persistentpack.go    # PostgreSQL-backed PackSvc implementation
+│   ├── repo/
+│   │   └── pack/                # sqlc-generated queries/models (do not edit manually)
 │   └── telemetry/
 │       ├── telemetry.go         # Sets up OTel tracer/meter providers, OTLP/HTTP exporters
 │       ├── trace.go             # Tracer implementation (span creation, error recording)
 │       ├── meter.go             # Meter implementation (counters)
 │       ├── middleware.go        # Attaches request ID to the active span
 │       └── types.go             # Tracer/Meter interfaces, metric names, service constants
+├── db/
+│   └── migrations/              # Goose SQL migrations for the pack_sizes table
 ├── web/
 │   └── static/
 │       └── index.html           # Vanilla JS frontend
@@ -116,7 +124,7 @@ Returns `200 OK` when the service is up.
 
 The service is instrumented with [OpenTelemetry](https://opentelemetry.io/), exporting both traces and metrics over OTLP/HTTP (`internal/telemetry/`).
 
-- **Tracing** — every request is wrapped in a span via `otelhttp` middleware; the Goa-generated request ID is attached as a span attribute (`internal/telemetry/middleware.go`). Service-level calls (calculate, update pack sizes) are traced explicitly through the `Tracer` interface.
+- **Tracing** — every request is wrapped in a span via `otelhttp` middleware; the Goa-generated request ID is attached as a span attribute (`internal/telemetry/middleware.go`). Individual PostgreSQL calls (`internal/pack/persistentpack.go`) are traced explicitly through the `Tracer` interface, nested under the request span.
 - **Metrics** — counters for key operations are pushed on a periodic interval via the `Meter` interface:
   - `optimizer.calculate.count`
   - `optimizer.update_pack_sizes.count`
@@ -154,13 +162,15 @@ Pack sizes are read from `PackSvc.GetSizes()` at call time, so runtime updates v
 
 ### Run locally
 
+The service now stores pack sizes in PostgreSQL, so a reachable database with migrations applied is required before starting the binary directly (the app itself never runs migrations — see [Run with Docker Compose](#run-with-docker-compose) for a batteries-included setup, or point `--db-host`/`--db-port`/etc. at an existing instance).
+
 ```bash
 git clone https://github.com/aleksandarv/pack-optimizer.git
 cd pack-optimizer
 
 go mod download
 make build
-./bin/pack-optimizer
+./bin/pack-optimizer --db-host=localhost --db-port=5432 --db-user=postgres --db-password=postgres
 ```
 
 Then open `http://localhost:8080` in your browser.
@@ -168,7 +178,8 @@ Then open `http://localhost:8080` in your browser.
 **Flags:**
 
 ```bash
-./bin/pack-optimizer --port=9090 --debug=true --otel-endpoint=localhost:4318 --metrics-interval=60
+./bin/pack-optimizer --port=9090 --debug=true --otel-endpoint=localhost:4318 --metrics-interval=60 \
+  --db-host=localhost --db-port=5432 --db-user=postgres --db-password=postgres
 ```
 
 ### Run with Docker

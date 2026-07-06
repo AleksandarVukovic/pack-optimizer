@@ -1,6 +1,7 @@
 package pack
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,8 @@ func TestNewInMemorySvc(t *testing.T) {
 			svc := NewInMemorySvc(tt.sizes)
 			assert.NotNil(t, svc)
 			assert.IsType(t, &InMemomorySvc{}, svc)
-			result := svc.GetSizes()
+			result, err := svc.GetSizes(context.Background())
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -49,7 +51,8 @@ func TestNewInMemoryPack_DefensiveCopy(t *testing.T) {
 	original := []int{250, 500, 1000}
 	svc := NewInMemorySvc(original)
 	original[0] = 555
-	result := svc.GetSizes()
+	result, err := svc.GetSizes(context.Background())
+	assert.NoError(t, err)
 
 	assert.Equal(t, []int{250, 500, 1000}, result)
 }
@@ -115,17 +118,20 @@ func TestUpdateSizes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			pack := NewInMemorySvc(tt.initialSizes)
-			err := pack.UpdateSizes(tt.newSizes)
+			err := pack.UpdateSizes(ctx, tt.newSizes)
 
 			if tt.expectError {
 				assert.Error(t, err)
 				// verify that sizes did not change
-				result := pack.GetSizes()
+				result, err := pack.GetSizes(ctx)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.expected, result)
 			} else {
 				assert.NoError(t, err)
-				result := pack.GetSizes()
+				result, err := pack.GetSizes(ctx)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.expected, result)
 			}
 		})
@@ -136,11 +142,13 @@ func TestUpdateSizes_DefensiveCopy(t *testing.T) {
 	svc := NewInMemorySvc([]int{250})
 	newSizes := []int{500, 1000, 2000}
 
-	err := svc.UpdateSizes(newSizes)
+	ctx := context.Background()
+	err := svc.UpdateSizes(ctx, newSizes)
 	assert.NoError(t, err)
 
 	newSizes[0] = 9999
-	result := svc.GetSizes()
+	result, err := svc.GetSizes(ctx)
+	assert.NoError(t, err)
 	assert.Equal(t, []int{500, 1000, 2000}, result)
 }
 

@@ -137,7 +137,10 @@ func TestCalculateOptimalPacks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := calc.CalculateOptimalPacks(ctx, tt.totalItems)
+			result, err := calc.CalculateOptimalPacks(ctx, tt.totalItems)
+			if err != nil {
+				t.Errorf("CalculateOptimalPacks(%d) returned error: %v", tt.totalItems, err)
+			}
 			if len(result) != len(tt.expected) {
 				t.Errorf("CalculateOptimalPacks(%d) returned %d pack sizes, expected %d", tt.totalItems, len(result), len(tt.expected))
 			}
@@ -160,8 +163,10 @@ func TestCalculateOptimalPacks_WithHugeNumbers(t *testing.T) {
 	p := pack.NewInMemorySvc([]int{23, 31, 53})
 	calc := NewCalculator(p)
 
-	result := calc.CalculateOptimalPacks(ctx, totalItems)
-
+	result, err := calc.CalculateOptimalPacks(ctx, totalItems)
+	if err != nil {
+		t.Errorf("CalculateOptimalPacks(%d) returned error: %v", totalItems, err)
+	}
 	expected := map[int]int{
 		23: 2,
 		31: 7,

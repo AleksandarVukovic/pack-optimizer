@@ -9,7 +9,7 @@ import (
 )
 
 type Calculator interface {
-	CalculateOptimalPacks(ctx context.Context, totalItems int) []pack.Pack
+	CalculateOptimalPacks(ctx context.Context, totalItems int) ([]pack.Pack, error)
 }
 
 type calculator struct {
@@ -22,20 +22,23 @@ func NewCalculator(p pack.PackSvc) Calculator {
 	}
 }
 
-func (c *calculator) CalculateOptimalPacks(ctx context.Context, totalItems int) []pack.Pack {
+func (c *calculator) CalculateOptimalPacks(ctx context.Context, totalItems int) ([]pack.Pack, error) {
 	log := logger.FromCtx(ctx)
 	log.Debug("Calculating optimal packs", "totalItems", totalItems)
 
 	result := make([]pack.Pack, 0)
 	if totalItems <= 0 {
-		return result
+		return result, nil
 	}
 
-	sizes := c.psvc.GetSizes()
+	sizes, err := c.psvc.GetSizes(ctx)
+	if err != nil {
+		return nil, err
+	}
 	log.Debug("Allowed pack sizes", "sizes", sizes)
 	r := c.optimizePacks(ctx, totalItems, sizes)
 	log.Debug("Initial optimal packs", "packs", r)
-	return c.optimizePacks(ctx, sum(r), sizes)
+	return c.optimizePacks(ctx, sum(r), sizes), nil
 }
 
 func (c *calculator) optimizePacks(ctx context.Context, totalItems int, sizes []int) []pack.Pack {

@@ -1,6 +1,7 @@
 package pack
 
 import (
+	"context"
 	"slices"
 	"sync"
 )
@@ -17,13 +18,13 @@ func NewInMemorySvc(sizes []int) PackSvc {
 	}
 }
 
-func (p *InMemomorySvc) GetSizes() []int {
+func (p *InMemomorySvc) GetSizes(ctx context.Context) ([]int, error) {
 	p.Lock()
 	defer p.Unlock()
-	return append([]int{}, p.sizes...)
+	return append([]int{}, p.sizes...), nil
 }
 
-func (p *InMemomorySvc) UpdateSizes(newSizes []int) error {
+func (p *InMemomorySvc) UpdateSizes(ctx context.Context, newSizes []int) error {
 	if err := validate(newSizes); err != nil {
 		return err
 	}

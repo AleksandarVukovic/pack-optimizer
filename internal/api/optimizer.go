@@ -35,8 +35,13 @@ func (s *optimizersrvc) GetPackSizes(ctx context.Context) (res *goaoptimizer.Get
 	log := logger.FromCtx(ctx)
 	log.Info("optimizer.getSizes")
 
+	sizes, err := s.psvc.GetSizes(ctx)
+	if err != nil {
+		log.Error("error while fetching pack sizes", "error", err.Error())
+		return nil, goaoptimizer.MakeInternalServerError(err)
+	}
 	return &goaoptimizer.GetPackSizesResult{
-		Sizes: s.psvc.GetSizes(),
+		Sizes: sizes,
 	}, nil
 }
 
@@ -46,7 +51,7 @@ func (s *optimizersrvc) UpdatePackSizes(ctx context.Context, p *goaoptimizer.Upd
 
 	s.m.Increment(ctx, telemetry.UpdatePackSizesCountMetric)
 
-	if err = s.psvc.UpdateSizes(p.Sizes); err != nil {
+	if err = s.psvc.UpdateSizes(ctx, p.Sizes); err != nil {
 		log.Error("error while updating pack sizes", "error", err.Error())
 		s.m.Increment(ctx, telemetry.UpdatePackSizesFailedCountMetric)
 		if verr, ok := errors.AsType[*pack.ValidationError](err); ok {
@@ -64,7 +69,11 @@ func (s *optimizersrvc) Calculate(ctx context.Context, p *goaoptimizer.Calculate
 	s.m.Increment(ctx, telemetry.CalculateCountMetric)
 
 	var packs []*goaoptimizer.Pack
-	result := s.c.CalculateOptimalPacks(ctx, p.Quantity)
+	result, err := s.c.CalculateOptimalPacks(ctx, p.Quantity)
+	if err != nil {
+		log.Error("error while calculating optimal packs", "error", err.Error())
+		return nil, goaoptimizer.MakeInternalServerError(err)
+	}
 	for _, pack := range result {
 		packs = append(packs, &goaoptimizer.Pack{
 			Size:     pack.Size,

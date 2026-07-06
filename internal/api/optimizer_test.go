@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	goaoptimizer "github.com/aleksandarv/pack-optimizer/gen/optimizer"
@@ -16,7 +17,9 @@ func TestGetPackSizes(t *testing.T) {
 	tests := []struct {
 		name          string
 		sizes         []int
+		getErr        error
 		expectedSizes []int
+		expectErr     bool
 	}{
 		{
 			name:          "returns configured sizes",
@@ -28,18 +31,28 @@ func TestGetPackSizes(t *testing.T) {
 			sizes:         []int{},
 			expectedSizes: []int{},
 		},
+		{
+			name:      "returns error when service fails",
+			getErr:    errors.New("db unavailable"),
+			expectErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			psvc := &mockPackSvc{}
-			psvc.On("GetSizes").Return(tt.sizes)
+			psvc.On("GetSizes", mock.Anything).Return(tt.sizes, tt.getErr)
 
 			svc := NewOptimizerSvc(psvc, &mockCalculator{}, newMockMeter())
 			res, err := svc.GetPackSizes(newCtx(t))
 
-			require.NoError(t, err)
-			assert.Equal(t, tt.expectedSizes, res.Sizes)
+			if tt.expectErr {
+				require.Error(t, err)
+				assert.Nil(t, res)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedSizes, res.Sizes)
+			}
 			psvc.AssertExpectations(t)
 		})
 	}
@@ -75,7 +88,7 @@ func TestUpdatePackSizes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			psvc := &mockPackSvc{}
-			psvc.On("UpdateSizes", tt.sizes).Return(tt.updateErr)
+			psvc.On("UpdateSizes", mock.Anything, tt.sizes).Return(tt.updateErr)
 
 			svc := NewOptimizerSvc(psvc, &mockCalculator{}, newMockMeter())
 			err := svc.UpdatePackSizes(newCtx(t), &goaoptimizer.UpdatePackSizesPayload{
@@ -130,7 +143,7 @@ func TestCalculate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := newCtx(t)
 			calc := &mockCalculator{}
-			calc.On("CalculateOptimalPacks", ctx, tt.quantity).Return(tt.calcResult)
+			calc.On("CalculateOptimalPacks", ctx, tt.quantity).Return(tt.calcResult, nil)
 
 			svc := NewOptimizerSvc(&mockPackSvc{}, calc, newMockMeter())
 			res, err := svc.Calculate(ctx, &goaoptimizer.CalculatePayload{Quantity: tt.quantity})
@@ -157,13 +170,13 @@ type mockPackSvc struct {
 	mock.Mock
 }
 
-func (m *mockPackSvc) GetSizes() []int {
-	args := m.Called()
-	return args.Get(0).([]int)
+func (m *mockPackSvc) GetSizes(ctx context.Context) ([]int, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]int), args.Error(1)
 }
 
-func (m *mockPackSvc) UpdateSizes(sizes []int) error {
-	args := m.Called(sizes)
+func (m *mockPackSvc) UpdateSizes(ctx context.Context, sizes []int) error {
+	args := m.Called(ctx, sizes)
 	return args.Error(0)
 }
 
@@ -171,9 +184,9 @@ type mockCalculator struct {
 	mock.Mock
 }
 
-func (m *mockCalculator) CalculateOptimalPacks(ctx context.Context, totalItems int) []pack.Pack {
+func (m *mockCalculator) CalculateOptimalPacks(ctx context.Context, totalItems int) ([]pack.Pack, error) {
 	args := m.Called(ctx, totalItems)
-	return args.Get(0).([]pack.Pack)
+	return args.Get(0).([]pack.Pack), args.Error(1)
 }
 
 type mockMeter struct {

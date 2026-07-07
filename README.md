@@ -18,6 +18,16 @@ A design-first HTTP API written in Go that calculates the optimal combination of
 
 ---
 
+## Branches
+
+`main` stays storage-agnostic (in-memory `PackSvc` only, no external dependencies). Storage/framework variants are developed on separate branches, each targeting `main` independently — they are not merged into each other.
+
+| Branch | Goal |
+|--------|------|
+| [`feature/postgres_pack_store`](https://github.com/aleksandarv/pack-optimizer/tree/feature/postgres_pack_store) | Swaps the in-memory `PackSvc` for a **PostgreSQL-backed** implementation (`sqlc`-generated queries, `Goose` migrations) |
+
+---
+
 ## Project Structure
 
 ```

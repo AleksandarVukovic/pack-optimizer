@@ -61,7 +61,6 @@ func (c *calculator) optimizePacks(ctx context.Context, totalItems int, sizes []
 		totalItems -= numPacks * optimalSize
 	}
 
-	// TODO: replace with logger.debug
 	log.Debug("Optimized packs", "packs", mresult)
 	for size, quantity := range mresult {
 		result = append(result, pack.Pack{

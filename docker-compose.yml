@@ -3,11 +3,60 @@ services:
     build: .
     environment:
       PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OTEL_ENDPOINT: host.docker.internal:4318
     ports:
       - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - app
+      - db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pack_optimizer
+    ports:
+      - "5432:5432"
+    volumes:
+      - pack-optimizer-pgdata:/var/lib/postgresql/data
+    networks:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pack_optimizer"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: golang:1.26-alpine
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT}/pack_optimizer?sslmode=disable
+      GOOSE_MIGRATION_DIR: /migrations
+    volumes:
+      - ./db/migrations:/migrations
+    networks:
+      - db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["sh", "-c", "go install github.com/pressly/goose/v3/cmd/goose@v3.27.2 && goose up"]
 
 networks:
   app:
+  db:
+
+volumes:
+  pack-optimizer-pgdata:

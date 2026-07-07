@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -22,6 +23,7 @@ import (
 	"github.com/aleksandarv/pack-optimizer/internal/logger"
 	"github.com/aleksandarv/pack-optimizer/internal/pack"
 	"github.com/aleksandarv/pack-optimizer/internal/telemetry"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/goa/v3/http/middleware"
@@ -33,20 +35,39 @@ func main() {
 		port            int
 		metricsInterval int
 		otelEndpoint    string
+		dbHost          string
+		dbPort          int
+		dbUser          string
+		dbPassword      string
 	)
 	flag.BoolVar(&debug, "debug", false, "Enable debug mode with verbose logging")
 	flag.IntVar(&port, "port", 8080, "HTTP port")
 	flag.IntVar(&metricsInterval, "metrics-interval", 60, "Interval in seconds for exporting metrics")
 	flag.StringVar(&otelEndpoint, "otel-endpoint", "localhost:4318", "OTel collector endpoint")
+	flag.StringVar(&dbHost, "db-host", "localhost", "PostgreSQL host")
+	flag.IntVar(&dbPort, "db-port", 5432, "PostgreSQL port")
+	flag.StringVar(&dbUser, "db-user", "postgres", "PostgreSQL user")
+	flag.StringVar(&dbPassword, "db-password", "postgres", "PostgreSQL password")
 	loadFlagsFromEnv()
 	flag.Parse()
 
 	log := logger.NewLogger(debug)
 	ctx := logger.WithCtx(context.Background(), log)
 
-	meter := telemetry.NewMeter(telemetry.APIComponentName)
-	psvc := pack.NewInMemorySvc(pack.DefaultSizes)
+	dbpool, err := pgxpool.New(ctx, buildDbUrl(dbUser, dbPassword, dbHost, dbPort))
+	if err != nil {
+		log.Error("unable to create postgres connection pool", "error", err)
+		os.Exit(1)
+	}
+	if err := dbpool.Ping(ctx); err != nil {
+		log.Error("unable to reach postgres", "error", err)
+		os.Exit(1)
+	}
+	log.Info("connected to postgres")
+
+	psvc := pack.NewPersistentSvc(dbpool, telemetry.NewTracer(telemetry.PackComponentName))
 	calculator := calculator.NewCalculator(psvc)
+	meter := telemetry.NewMeter(telemetry.APIComponentName)
 	optimizerSvc := api.NewOptimizerSvc(psvc, calculator, meter)
 	endpoints := goaoptimizer.NewEndpoints(optimizerSvc)
 
@@ -111,6 +132,7 @@ func main() {
 		if err := shutdownMetrics(ctx); err != nil {
 			log.Error("error while shutting down meter provider", "error", err)
 		}
+		dbpool.Close()
 	})
 
 	// waiting on some signal to shutdown the server
@@ -145,12 +167,26 @@ func mountDocsEndpoints(ctx context.Context, mux goahttp.ResolverMuxer) {
 	log.Debug("expose API", "verb", "GET", "path", "/docs")
 }
 
+func buildDbUrl(user, password, host string, port int) string {
+	u := &url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(user, password),
+		Host:   host + ":" + strconv.Itoa(port),
+		Path:   "pack_optimizer",
+	}
+	return u.String() + "?sslmode=disable"
+}
+
 func loadFlagsFromEnv() {
 	envToFlag := map[string]string{
 		"DEBUG":            "debug",
 		"PORT":             "port",
 		"METRICS_INTERVAL": "metrics-interval",
 		"OTEL_ENDPOINT":    "otel-endpoint",
+		"DB_HOST":          "db-host",
+		"DB_PORT":          "db-port",
+		"DB_USER":          "db-user",
+		"DB_PASSWORD":      "db-password",
 	}
 	for env, flagName := range envToFlag {
 		if val := os.Getenv(env); val != "" {
